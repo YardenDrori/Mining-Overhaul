@@ -49,6 +49,7 @@ remove logs print
 add warnings print
 add errors print
 when stabilizer breaks send message
+remove redundent dependencies
 
 
 requirement per biome:

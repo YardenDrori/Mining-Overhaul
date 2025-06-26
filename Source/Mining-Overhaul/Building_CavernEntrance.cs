@@ -58,6 +58,15 @@ namespace MiningOverhaul
         private int lastCacheRefresh = -999999; // When we last refreshed cache
         private bool hasCompletedFullRefresh = false; // Track if we've done a complete refresh cycle
 
+        // Monitored building states
+        private bool hasStabilizer = false;
+        private bool hasGenerator = false;
+        private bool hasDefenseSystem = false;
+        // Add more bools here as needed
+
+        private int lastThingCheckTick = -999999;
+        private const int THING_CHECK_INTERVAL = 300; // Check every 5 seconds
+
         // Legacy/compatibility
         public float pointsMultiplier = 1f;
         private int lastIncidentTick = -999999;
@@ -97,6 +106,12 @@ namespace MiningOverhaul
             Scribe_Values.Look(ref validationIndex, "validationIndex", 0);
             Scribe_Values.Look(ref hasCompletedFullRefresh, "hasCompletedFullRefresh", false);
 
+            // Building detection states
+            Scribe_Values.Look(ref hasStabilizer, "hasStabilizer", false);
+            Scribe_Values.Look(ref hasGenerator, "hasGenerator", false);
+            Scribe_Values.Look(ref hasDefenseSystem, "hasDefenseSystem", false);
+            Scribe_Values.Look(ref lastThingCheckTick, "lastThingCheckTick", -999999);
+
             // Legacy
             Scribe_Values.Look(ref lastIncidentTick, "lastIncidentTick", 0);
             Scribe_Values.Look(ref nextIncidentTick, "nextIncidentTick", 0);
@@ -133,6 +148,12 @@ namespace MiningOverhaul
             else
             {
                 HandleStabilityDegradation();
+            }
+
+            // Check for powered buildings periodically
+            if (ShouldCheckForBuildings())
+            {
+                CheckForPoweredBuildings();
             }
         }
 
@@ -180,6 +201,7 @@ namespace MiningOverhaul
                     debugInfo += $"\nColonists: {colonistCount} (x{multiplier:F2} rate)";
                     debugInfo += $"\nPartial Collapse: {isPartiallyCollapsing}";
                     debugInfo += $"\nFull Collapse: {isCollapsing}";
+                    debugInfo += $"\nStabilizer: {hasStabilizer} | Generator: {hasGenerator} | Defense: {hasDefenseSystem}";
                     // debugInfo += $"\nBlockable Cells: {blockableCells.Count}";
                     // debugInfo += $"\nRefresh Progress: {refreshIndex} | Validation: {validationIndex}";
                     // debugInfo += $"\nCache Entries: {adjacentRockCache.Count}";
@@ -772,6 +794,50 @@ namespace MiningOverhaul
             Thing.allowDestroyNonDestroyable = true;
             Destroy(DestroyMode.Deconstruct);
             Thing.allowDestroyNonDestroyable = false;
+        }
+        #endregion
+
+        #region Building Detection System
+        private bool ShouldCheckForBuildings()
+        {
+            return Find.TickManager.TicksGame >= lastThingCheckTick + THING_CHECK_INTERVAL;
+        }
+
+        private void CheckForPoweredBuildings()
+        {
+            if (base.Map == null) return;
+            
+            // Reset all flags
+            hasStabilizer = false;
+            hasGenerator = false;
+            hasDefenseSystem = false;
+            
+            // Check all buildings on the SURFACE map (where the entrance is)
+            foreach (Building building in base.Map.listerBuildings.allBuildingsColonist)
+            {
+                // Check if powered
+                var powerComp = building.GetComp<CompPowerTrader>();
+                bool isPowered = powerComp == null || powerComp.PowerOn;
+                
+                if (!isPowered) continue;
+                
+                // Set flags based on building type
+                switch (building.def.defName)
+                {
+                    case "CommsConsole":
+                        hasStabilizer = true;
+                        break;
+                    case "MyGenerator": 
+                        hasGenerator = true;
+                        break;
+                    case "MyDefenseSystem":
+                        hasDefenseSystem = true;
+                        break;
+                    // Add more cases here when you need them
+                }
+            }
+            
+            lastThingCheckTick = Find.TickManager.TicksGame;
         }
         #endregion
         
