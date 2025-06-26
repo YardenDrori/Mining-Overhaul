@@ -1,0 +1,78 @@
+check if cavern exit should be captitalized
+add visuals to cave collapse
+add ambiance to caverns
+replace cavern close sound effect and make the collapse cooler
+make mining shit close cavern faster
+fix caveentrance debug gizmo showing incorrect max pawns when they leave the cave (shows correctly but should show the highest amount that has been there at once)
+and generally make it more elegant
+mining valubles should increase instability
+make deep scanner make finding caverns take longer and make it configurable
+About.xml desc
+cavern biome description
+fix warnings
+Add audio to caverns collapsing
+add cave ambiance
+improved resource distribution
+add letters and warnings to stuff
+improve collapse visuals
+make collapse spawn filth
+balance numbers for collapse and mineral mining instability
+make level 1 give steel slag instead of steal
+add option to choose levels
+add textures for explosives
+add more tiers of explosives
+add textures for access point add textures for scanner buttons UI
+rename bomb and scanner
+add hissing sound and visuals to bomb to indicate it auto exploding
+change explosives resources required to build
+rename scanner and explosives
+add todos to stuff
+change scanner letters
+add letters to cavern opening to explain it
+add collapse warnings
+change scanner letters to translate()
+make Seismic Resonators texture
+Seismic Resonator Description
+bomb description
+go through all descriptions and item names
+CavernStabilizer texture
+CavernStabilizer destroy sound
+bomb placeworker draws arrows to steam geysers
+add all biomes to support beam structure def
+change stabilizer flavor from stabilizing to reinforcing and repairing as well as the game condition it adds
+remove collapse avoidance of entrance and middle
+make collapse avoid pawns
+otpimize the shit out of collapse sequance
+make stability tower not deconstructable and not uninstallable after built
+make stabiliser actually stabilise
+remove logs print
+add warnings print
+add errors print
+when stabilizer breaks send message
+
+
+requirement per biome:
+main floor texture, secondery floor texture
+wall texture, second wall texture
+decor, decor2, decor3
+unique mechanic (lvl2+)
+event(level3+)
+ongoing effect on the outside world while cavern is open (level4+)
+
+cave types:
+level1: acess to steel slag
+rocky V, flooded V
+
+level2: access to steel + silver
+vegetation V, Frozen V, ???
+
+level3: acess to steel + silver + uranium + jade
+infested (waiting for insectoids 2 update and odyssey release), Fungal (waiting for odyssey fungi), ???
+
+level4: acess to steel + jade + silver + uranium + gold + plasteel
+magma (waiting for odyssey), radioactive (waiting for odyssey), Bunker X
+
+Level5:
+To come with odyssey series of o2 depraved levels
+
+level ??? (secret) - deltarune death lol, golden cube chamber

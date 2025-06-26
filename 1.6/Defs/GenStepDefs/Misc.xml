@@ -1,0 +1,15 @@
+<Defs>
+
+    <GenStepDef>
+        <defName>CenterHole</defName>
+        <order>500</order>
+        <genStep Class="MiningOverhaul.GenStep_CenterHole" />
+    </GenStepDef>
+
+    <GenStepDef>
+        <defName>PlaceCavernExit</defName>
+        <order>240</order>
+        <genStep Class="MiningOverhaul.GenStep_PlaceCavernExit" />
+    </GenStepDef>
+
+</Defs>

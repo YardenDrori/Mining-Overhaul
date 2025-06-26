@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- Example GenStepDef usage in your cave generation -->
+    <GenStepDef>
+    <defName>CaveVegetationDense</defName>
+    <order>450</order>
+    <genStep Class="MiningOverhaul.GenStep_POIGeneration">
+        <genStepDef>MO_PlantClusterContent</genStepDef>
+    </genStep>
+    </GenStepDef>
+
+    <GenStepDef>
+    <defName>CaveVegetationBrambles</defName>
+    <order>451</order>
+    <genStep Class="MiningOverhaul.GenStep_POIGeneration">
+        <genStepDef>MO_Brambles</genStepDef>
+    </genStep>
+    </GenStepDef>
+
+</Defs>

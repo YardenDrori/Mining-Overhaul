@@ -1,0 +1,69 @@
+<Defs>
+
+<!-- Crystal -->
+  <ThingDef ParentName="UglyRockBase" Name="CrystalBase">
+    <defName>Crystal</defName>
+    <label>Crystal</label>
+    <description>Hardened crystalized minerals.</description>
+    <graphicData>
+    <color>(157,76,201)</color>
+    </graphicData>
+    <statBases>
+      <MaxHitPoints>200</MaxHitPoints>
+    </statBases>
+    <building>
+      <smoothedThing>SmoothedCrystal</smoothedThing>
+      <isNaturalRock>false</isNaturalRock>
+      <claimable>false</claimable>
+      <mineablePreventMeteorite>true</mineablePreventMeteorite>
+    </building>
+  </ThingDef>
+
+  <ThingDef ParentName="CrystalBase">
+    <defName>SmoothedCrystal</defName>
+    <label>smoothed crystal</label>
+    <description>Hardened crystalized minerals. The reflective surface reflects light that hits it.</description>
+    <uiIconPath>Things/Building/Linked/WallSmooth_MenuIcon</uiIconPath>
+    <graphicData>
+      <texPath>Things/Building/Linked/RockSmooth_Atlas</texPath>
+    </graphicData>
+    <statBases>
+      <Beauty>1</Beauty>
+      <MarketValue>7</MarketValue>
+    </statBases>
+    <building>
+      <isNaturalRock>false</isNaturalRock>
+      <canBuildNonEdificesUnder>true</canBuildNonEdificesUnder>
+      <artificialForMeditationPurposes>false</artificialForMeditationPurposes>
+      <smoothedThing />
+      <paintable>true</paintable>
+    </building>
+    <saveCompressible>false</saveCompressible>
+    <repairEffect>Repair</repairEffect>
+  </ThingDef>
+
+  <TerrainDef ParentName="NaturalTerrainBase">
+    <defName>CrystalFloor</defName>
+    <label>crystal floor</label>
+    <description>Rough stone floor made of crystal formations.</description>
+    <texturePath>Terrain/Surfaces/RoughStone</texturePath>
+    <edgeType>FadeRough</edgeType>
+    <renderPrecedence>340</renderPrecedence>
+    <pathCost>2</pathCost>
+    <statBases>
+      <Beauty>2</Beauty>
+    </statBases>
+    <color>(121,59,155)</color>
+    <scatterType>Rocky</scatterType>
+    <affordances>
+      <li>Light</li>
+      <li>Medium</li>
+      <li>Heavy</li>
+    </affordances>
+    <fertility>0</fertility>
+    <takeFootprints>true</takeFootprints>
+  </TerrainDef>
+
+
+
+</Defs>

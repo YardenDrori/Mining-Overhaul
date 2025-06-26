@@ -1,0 +1,38 @@
+<Defs>
+    <MiningOverhaul.POIContentDef>
+        <defName>MO_PlantClusterContent</defName>
+        <density>1</density> <!-- Spawn within a tile of POI center -->
+        <spawnOptions>
+        <li>
+            <thingDef>Plant_Grass</thingDef>
+            <thingCount>3~6</thingCount>      <!-- Spawn 3-6 grass plants -->
+            <weight>3</weight>                <!-- Common -->
+        </li>
+        <li>
+            <thingDef>Plant_Dandelion</thingDef>
+            <thingCount>1~3</thingCount>      <!-- Spawn 1-3 dandelions -->
+            <weight>2</weight>                <!-- Less common -->
+        </li>
+        </spawnOptions>
+    </MiningOverhaul.POIContentDef>
+
+
+    
+
+    
+
+
+    <MiningOverhaul.POIContentDef>
+        <defName>MO_Brambles</defName>
+        <density>2</density> <!-- Spawn within 2 tiles of POI center -->
+        <spawnOptions>
+        <li>
+            <thingDef>Plant_Brambles</thingDef>
+            <thingCount>10~20</thingCount>      <!-- Spawn 10-20 brambles -->
+            <weight>1</weight>               
+        </li>
+        </spawnOptions>
+    </MiningOverhaul.POIContentDef>
+
+
+</Defs>

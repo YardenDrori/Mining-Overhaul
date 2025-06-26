@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs> <!--DEEP STEEL-->
+  <ThingDef ParentName="RockBase">
+      <defName>MO_MineableSteelDeep</defName>
+      <label>compacted steel</label>
+      <description>The remains of some ancient, collapsed structure. Rich in steel. It is hardier due to the pressure from the ground above.</description>
+      <graphicData>
+      <texPath>Things/Building/Linked/RockFlecked_Atlas</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <color>(114,92,83)</color>
+      <colorTwo>(155,133,107)</colorTwo>
+      </graphicData>
+      <statBases>
+      <MaxHitPoints>4500</MaxHitPoints>
+      </statBases>
+      <building>
+      <isResourceRock>true</isResourceRock>
+      <mineableThing>Steel</mineableThing>
+      <mineableYield>60</mineableYield>
+      <mineableScatterCommonality>1</mineableScatterCommonality>
+      <mineableScatterLumpSizeRange>30~40</mineableScatterLumpSizeRange>
+      <veinMineable>true</veinMineable>
+      <isNaturalRock>false</isNaturalRock>
+      <claimable>false</claimable>
+      <mineablePreventMeteorite>true</mineablePreventMeteorite>
+      </building>
+  </ThingDef>
+
+  <ThingDef ParentName="RockBase">
+    <defName>MO_WeakRock</defName>
+    <label>collapsed rocks</label>
+    <description>Collapsed rocks, packed tightly enough to hold up a roof, quick to mine.</description>
+    <graphicData>
+      <texPath>Things/Building/Natural/CollapsedRocks</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <linkType>None</linkType>
+      <drawSize>(3,3)</drawSize>
+    </graphicData>
+    <mineable>false</mineable>
+    <neverMultiSelect>true</neverMultiSelect>
+    <!-- <tickerType>Rare</tickerType> -->
+    <autoTargetNearbyIdenticalThings>true</autoTargetNearbyIdenticalThings>
+    <statBases>
+      <MaxHitPoints>200</MaxHitPoints>
+    </statBases>
+    <rotatable>true</rotatable>
+    <building>
+      <isNaturalRock>false</isNaturalRock>
+      <claimable>false</claimable>
+      <mineablePreventMeteorite>true</mineablePreventMeteorite>
+      <destroyShakeAmount>0.01</destroyShakeAmount>
+      <isTargetable>true</isTargetable>
+      <quickTargetable>true</quickTargetable>
+    </building>
+    <comps>
+    <li Class="CompProperties_CascadeOnDestroyed">
+      <cascadeThingDefs>
+        <li>MO_WeakRock</li>
+      </cascadeThingDefs>
+    </li>
+    </comps>
+  </ThingDef>
+</Defs>

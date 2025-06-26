@@ -1,0 +1,14 @@
+<Defs>
+    <GenStepDef>
+        <defName>DefaultCave</defName>
+        <order>200</order>
+        <genStep Class="MiningOverhaul.GenStep_CaveShape">
+            <minAutomataCycles>5</minAutomataCycles>
+            <maxAutomataCycles>5</maxAutomataCycles>
+            <initialAirChance>0.6</initialAirChance>
+            <maxCaveDistancePath>6</maxCaveDistancePath>
+        </genStep>
+    </GenStepDef>
+
+    
+</Defs>

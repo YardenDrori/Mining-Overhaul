@@ -1,0 +1,17 @@
+<Defs>
+    <GenStepDef>
+        <defName>cool_name</defName>
+        <order>300</order>
+        <genStep Class="MiningOverhaul.GenStep_FloorReplacement">
+            <floorTile1>MossyTerrain</floorTile1>
+            <floorTile1Percentage>100</floorTile1Percentage>
+            <blotchTerrain>WaterShallow</blotchTerrain>
+            <blotchPercentage>10</blotchPercentage>
+            <blotchCount>5</blotchCount>
+            <minBlotchSize>5</minBlotchSize>
+            <maxBlotchSize>15</maxBlotchSize>
+            <use8DirectionalWalk>false</use8DirectionalWalk>
+            <blotchDensity>0.8</blotchDensity>
+        </genStep>  <!-- lowercase g to match opening tag -->
+    </GenStepDef>
+</Defs>

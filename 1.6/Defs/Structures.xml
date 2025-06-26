@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <ThingDef ParentName="CaveExit">
+    <defName>CavernExit</defName>
+    <label>cavern exit</label>
+  </ThingDef>
+
+  <ThingDef ParentName="BuildingBase">
+    <defName>CavernStabilizer</defName>
+    <label>cavern support</label>
+    <description>A device meant to stabilize cave systems, when placed down it extends a support beam to the ceiling of the cave meant for keeping its structural integrity, however due the extreme amounts of pressure on the support beam the device breaks down after a few hours.</description>
+    <graphicData>
+      <texPath>Things/Building/Special/VanometricPowerCell</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(2, 3)</drawSize>
+      <damageData>
+        <cornerTL>Damage/Corner</cornerTL>
+        <cornerTR>Damage/Corner</cornerTR>
+        <cornerBL>Damage/Corner</cornerBL>
+        <cornerBR>Damage/Corner</cornerBR>
+      </damageData>
+    </graphicData>
+    <altitudeLayer>Building</altitudeLayer>
+    <drawerType>MapMeshAndRealTime</drawerType>
+    <pathCost>42</pathCost>
+    <fillPercent>0.4</fillPercent>
+    <passability>PassThroughOnly</passability>
+    <leaveResourcesWhenKilled>false</leaveResourcesWhenKilled>
+    <canOverlapZones>false</canOverlapZones>
+    <castEdgeShadows>true</castEdgeShadows>
+    <staticSunShadowHeight>0.5</staticSunShadowHeight>
+    <terrainAffordanceNeeded>Medium</terrainAffordanceNeeded>
+    <thingCategories>
+      <li>BuildingsSpecial</li>
+    </thingCategories>
+    <statBases>
+      <MarketValue>1200</MarketValue>
+      <MaxHitPoints>4500</MaxHitPoints>
+      <Flammability>0</Flammability>
+      <Mass>15</Mass>
+    </statBases>
+    <tickerType>Normal</tickerType>
+    <size>(2, 2)</size>
+    <minifiedDef>MinifiedThing</minifiedDef>
+    <tradeability>Sellable</tradeability>
+    <tradeTags>
+      <li>ExoticBuilding</li>
+    </tradeTags>
+    <building>
+      <destroyShakeAmount>3</destroyShakeAmount>
+      <destroySound>BuildingDestroyed_Metal_Small</destroySound>
+      <deconstructible>false</deconstructible>
+    </building>
+    <placeWorkers>
+      <li>MiningOverhaul.PlaceWorker_OnlyInCavern</li>
+    </placeWorkers>
+    <modExtensions>
+        <li Class="MiningOverhaul.AllowedBiomesExtension">
+            <allowedBiomes>
+                <li>CavernNormal</li>
+            </allowedBiomes>
+        </li>
+    </modExtensions>
+    <comps>
+        <li Class="MiningOverhaul.CompProperties_CavernStabilizer" />
+    </comps>
+  </ThingDef>
+
+
+    <ThingDef ParentName="BuildingBase">
+    <defName>MO_CaveBombTierOne</defName>
+    <label>bomb tier one temp name</label>
+    <description>A single use drill that can open up cave systems close to the surface.</description>
+    <graphicData>
+      <graphicClass>Graphic_Single</graphicClass>
+      <texPath>Things/Building/Production/DeepDrill</texPath>
+      <drawSize>(4,4)</drawSize>
+      <drawRotated>false</drawRotated>
+      <shadowData>
+        <volume>(0.52, 0.53, 0.09)</volume>
+        <offset>(0,0,-0.43)</offset>
+      </shadowData>
+    </graphicData>
+    <size>(2,2)</size>
+    <altitudeLayer>Building</altitudeLayer>
+    <passability>PassThroughOnly</passability>
+    <pathCost>50</pathCost>
+    <fillPercent>0.5</fillPercent>
+    <designationCategory>Production</designationCategory>
+    <!-- <designationHotKey>Misc12</designationHotKey> -->
+    <rotatable>true</rotatable>
+    <terrainAffordanceNeeded>Light</terrainAffordanceNeeded>
+    <constructionSkillPrerequisite>4</constructionSkillPrerequisite>
+    <uiIconOffset>(0, 0.03)</uiIconOffset>
+    <uiIconScale>0.85</uiIconScale>
+    <building>
+      <destroyShakeAmount>0.5</destroyShakeAmount>
+      <uninstallWork>1800</uninstallWork>
+      <buildingTags>
+        <li>Production</li>
+      </buildingTags>
+      <destroySound>BuildingDestroyed_Metal_Small</destroySound>
+      <deconstructible>false</deconstructible>
+    </building>
+    <!-- <thingCategories>
+      <li>BuildingsProduction</li>
+    </thingCategories> -->
+    <costList>
+      <Steel>100</Steel>
+      <ComponentIndustrial>2</ComponentIndustrial>
+    </costList>
+    <placeWorkers>
+      <li>MiningOverhaul.PlaceWorker_CavernAccessPoint</li>
+      <!-- <li>PlaceWorker_PreventInteractionSpotOverlap</li> -->
+      <li>PlaceWorker_InvalidOverSubstructure</li>
+    </placeWorkers>
+    <drawPlaceWorkersWhileSelected>true</drawPlaceWorkersWhileSelected>
+    <researchPrerequisites>
+      <li>DeepDrilling</li>
+    </researchPrerequisites>
+    <statBases>
+      <MaxHitPoints>300</MaxHitPoints>
+      <WorkToBuild>10000</WorkToBuild>
+      <Flammability>0.5</Flammability>
+      <Beauty>-25</Beauty>
+      <Mass>35</Mass>
+    </statBases>
+    <thingClass>MiningOverhaul.Building_CaveBomb</thingClass>
+    <tickerType>Normal</tickerType>
+  </ThingDef>
+
+
+
+<ThingDef ParentName="BuildingBase">
+    <defName>CustomGroundScanner</defName>
+    <label>ancient structure scanner</label>
+    <description>A modified sensor unit that searches for buried ancient structures instead of resources. The chance to find a structure depends on the operator's research ability. It consumes a lot of electricity. When a structure is found, it will be revealed and can be explored. It doesn't work under a roof.</description>
+    <graphicData>
+      <texPath>Things/Building/Misc/GroundPenetratingScanner</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>2.65</drawSize>
+      <drawRotated>false</drawRotated>
+      <drawOffset>(0,0,-0.05)</drawOffset>
+      <shadowData>
+        <volume>(1.6875, 0.375, 2.125)</volume>
+        <offset>(0,0,-0.12)</offset>
+      </shadowData>
+    </graphicData>
+    <costList>
+      <Steel>150</Steel>
+      <ComponentIndustrial>4</ComponentIndustrial>
+      <ComponentSpacer>1</ComponentSpacer>
+    </costList>
+    <building>
+      <destroySound>BuildingDestroyed_Metal_Big</destroySound>
+    </building>
+    <comps>
+      <li Class="CompProperties_Forbiddable"/>
+      <li Class="CompProperties_Power">
+        <compClass>CompPowerTrader</compClass>
+        <basePowerConsumption>700</basePowerConsumption>
+      </li>
+      <li Class="CompProperties_Breakdownable"/>
+      <li Class="CompProperties_Flickable"/>
+      <li Class="MiningOverhaul.CompProperties_CustomStructureScanner">
+        <scanSpeedStat>ResearchSpeed</scanSpeedStat>
+        <scanFindMtbDays>3</scanFindMtbDays>
+        <scanFindGuaranteedDays>6</scanFindGuaranteedDays>
+        <soundWorking>ScannerGroundPenetrating_Ambience</soundWorking>
+        <depthOptions>
+          <li>
+            <depth>1</depth>
+            <label>Shallow ruins</label>
+            <scanTimeMultiplier>1</scanTimeMultiplier>
+            <possibleThingDefs>
+              <li>CavernAcessPointTierOne</li>
+            </possibleThingDefs>
+          </li>
+          <li>
+            <depth>2</depth>
+            <label>Buried structures</label>
+            <scanTimeMultiplier>2</scanTimeMultiplier>
+            <possibleThingDefs>
+              <li>CavernAcessPointTierOne</li>
+            </possibleThingDefs>
+          </li>
+          <li>
+            <depth>3</depth>
+            <label>Buried structures 3</label>
+            <scanTimeMultiplier>3</scanTimeMultiplier>
+            <possibleThingDefs>
+              <li>CavernAcessPointTierOne</li>
+            </possibleThingDefs>
+          </li>
+          <li>
+            <depth>4</depth>
+            <label>Buried structures 4</label>
+            <scanTimeMultiplier>4</scanTimeMultiplier>
+            <possibleThingDefs>
+              <li>CavernAcessPointTierOne</li>
+            </possibleThingDefs>
+          </li>
+          <li>
+            <depth>3</depth>
+            <label>Buried structures 5</label>
+            <scanTimeMultiplier>5</scanTimeMultiplier>
+            <possibleThingDefs>
+              <li>CavernAcessPointTierOne</li>
+            </possibleThingDefs>
+          </li>
+        </depthOptions>
+      </li>
+    </comps>
+    <altitudeLayer>Building</altitudeLayer>
+    <canBeUsedUnderRoof>false</canBeUsedUnderRoof>
+    <statBases>
+      <MaxHitPoints>200</MaxHitPoints>
+      <WorkToBuild>12000</WorkToBuild>
+      <Flammability>0.5</Flammability>
+      <Beauty>-8</Beauty>
+    </statBases>
+    <hasInteractionCell>true</hasInteractionCell>
+    <interactionCellOffset>(0,0,2)</interactionCellOffset>
+    <interactionCellIcon>DiningChair</interactionCellIcon>
+    <interactionCellIconReverse>true</interactionCellIconReverse>
+    <fillPercent>0.40</fillPercent>
+    <leaveResourcesWhenKilled>false</leaveResourcesWhenKilled>
+    <passability>PassThroughOnly</passability>
+    <pathCost>50</pathCost>
+    <designationCategory>Misc</designationCategory>
+    <rotatable>true</rotatable>
+    <canOverlapZones>false</canOverlapZones>
+    <size>(3,3)</size>
+    <terrainAffordanceNeeded>Heavy</terrainAffordanceNeeded>
+    <placeWorkers>
+      <li>PlaceWorker_NotUnderRoof</li>
+      <li>PlaceWorker_PreventInteractionSpotOverlap</li>
+    </placeWorkers>
+    <defaultPlacingRot>South</defaultPlacingRot>
+    <researchPrerequisites>
+      <li>GroundPenetratingScanner</li>
+    </researchPrerequisites>
+    <constructionSkillPrerequisite>8</constructionSkillPrerequisite>
+  </ThingDef>
+
+
+
+
+</Defs>

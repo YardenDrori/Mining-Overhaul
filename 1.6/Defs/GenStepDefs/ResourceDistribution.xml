@@ -1,0 +1,9 @@
+<Defs>
+
+    <GenStepDef>
+        <defName>DeepSteelVeins</defName>
+        <order>250</order>
+        <genStep Class="MiningOverhaul.GenStep_DeepSteelVeins" />
+    </GenStepDef>
+
+</Defs>

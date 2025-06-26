@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+<MapGeneratorDef Name="Cavern">
+  <defName>cavern</defName>
+  <label>Cavern</label>
+  <isUnderground>true</isUnderground>
+  <forceCaves>false</forceCaves>
+  <ignoreAreaRevealedLetter>true</ignoreAreaRevealedLetter>
+  <disableCallAid>true</disableCallAid>
+  <customMapComponents>
+    <li>UndercaveMapComponent</li>
+  </customMapComponents>
+  <pocketMapProperties>
+    <biome>CavernNormal</biome>
+    <temperature>15</temperature>
+    <tileMutators>
+      <li>UndergroundCave</li>
+    </tileMutators>
+  </pocketMapProperties>
+  <genSteps>
+    <li>ElevationFertility</li>
+    <li>MutatorPostElevationFertility</li>
+    <li>DefaultCave</li>
+    <!-- <li>cool_name</li> -->
+    <!-- <li>CaveVegetationDense</li> -->
+    <li>CaveVegetationBrambles</li>
+    <!-- <li>MO_CaveRockGeneration</li> -->
+    <li>Terrain</li>
+    <li>MutatorPostTerrain</li>
+    <li>MutatorCriticalStructures</li>
+    <li>MutatorNonCriticalStructures</li>
+    <li>RockChunks</li>
+    <li>PlaceCavernExit</li>
+    <li>DeepSteelVeins</li>
+    <li>Plants</li>
+    <li>MutatorFinal</li>
+    <li>Fog</li>
+  </genSteps>
+</MapGeneratorDef>
+
+
+
+</Defs>

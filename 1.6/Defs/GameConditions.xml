@@ -1,0 +1,11 @@
+<Defs>
+  
+    <GameConditionDef>
+        <defName>CavernStabilizerActive</defName>
+        <!-- <conditionClass>MiningOverhaul.GameCondition_CavernStabilizerActive</conditionClass> -->
+        <label>Cavern Stabilized</label>
+        <description>This cavern is being kept stable by a support beam, preventing it from collapsing.</description>
+        <allowUnderground>true</allowUnderground>
+    </GameConditionDef>
+
+</Defs>

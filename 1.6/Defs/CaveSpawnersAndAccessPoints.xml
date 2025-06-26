@@ -1,0 +1,66 @@
+<Defs>
+
+    <ThingDef ParentName="BuildingBase" Class="MiningOverhaul.CavernSpawnerThingDef">
+        <defName>CavernSpawnerTierOne</defName>
+        <label>cavern acess point (opening)</label>
+        <description>The cave system is in the process of opening.</description>
+        <thingClass>MiningOverhaul.BuildingCavernSpawner</thingClass>
+        <passability>Standable</passability>
+        <fillPercent>0</fillPercent>
+        <blockWind>false</blockWind>
+        <destroyable>false</destroyable>
+        <holdsRoof>true</holdsRoof>
+        <selectable>true</selectable>
+        <tickerType>Normal</tickerType>
+        <useHitPoints>false</useHitPoints>
+        <drawerType>RealtimeOnly</drawerType>
+        <size>(8, 8)</size>
+        <uiIconPath>UI/Icons/UndergroundEmergence</uiIconPath>
+        
+        <!-- THESE GO OUTSIDE THE BUILDING BLOCK! -->
+        <possibleThingsList>
+            <li>CavernEntrance</li>
+            <li>testCave</li>
+        </possibleThingsList>
+        
+        <possibleThingsWeights>
+            <li>1</li>
+            <li>1</li>
+        </possibleThingsWeights>
+            
+        
+        <!-- Regular building properties (NO Class attribute!) -->
+        <building>
+            <groundSpawnerSpawnDelay>600~1200</groundSpawnerSpawnDelay>
+            <groundSpawnerDestroyAdjacent>true</groundSpawnerDestroyAdjacent>
+            <groundSpawnerSustainerSound>PitGateOpening</groundSpawnerSustainerSound>
+            <groundSpawnerLetterText>The Explosion has opened a passage to the depths below, forming a massive hole. \n\nThis Cavern will remain open for a few days but activity within it can drastically shorten that time. Explore the cavern to find valuable metals and resources but be weary of dangers buried under the soil.</groundSpawnerLetterText>
+        </building>
+    </ThingDef>
+
+    <ThingDef ParentName="BuildingBase">
+        <defName>CavernAcessPointTierOne</defName>
+        <label>cavern acess point</label>
+        <description>There is a cave system far below the ground connecting to this spot, you can blow a hole into the cave system to explore it for valuble resources, but caving is a dangerous prospect. If left alone this entry point will collapse in a few days.</description>
+        <holdsRoof>false</holdsRoof>
+        <drawerType>RealtimeOnly</drawerType>
+        <uiIconScale>0.5</uiIconScale>
+        <altitudeLayer>Floor</altitudeLayer>
+        <rotatable>false</rotatable>
+        <destroyable>false</destroyable>
+        <useHitPoints>false</useHitPoints>
+        <thingClass>MiningOverhaul.Building_CavernAccessPoint</thingClass>
+        <tickerType>Normal</tickerType>
+        <selectable>true</selectable>
+        <size>(2,2)</size>
+        <neverOverlapFloors>true</neverOverlapFloors>
+        <blockPlants>true</blockPlants>
+        <building>
+            <isEdifice>false</isEdifice>
+            <claimable>false</claimable>
+            <deconstructible>false</deconstructible>
+        </building>
+    </ThingDef>
+
+
+</Defs>

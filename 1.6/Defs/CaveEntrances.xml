@@ -1,0 +1,99 @@
+<Defs>
+
+
+
+    <ThingDef ParentName="BuildingBase">
+    <defName>CavernEntrance</defName>
+    <label>Cavern Entrance</label>
+    <description>A massive, foreboding hole that connects the surface with a network of underground caves. It is possible to climb down into the cavern below. The entrance looks unstable and will collapse soon!</description>
+    <size>(8,8)</size>
+    <useHitPoints>false</useHitPoints>
+    <thingClass>MiningOverhaul.CavernEntrance</thingClass>
+    <tickerType>Normal</tickerType>
+    <rotatable>false</rotatable>
+    <terrainAffordanceNeeded>Heavy</terrainAffordanceNeeded>
+    <canOverlapZones>false</canOverlapZones>
+    <graphicData>
+        <graphicClass>Graphic_Single</graphicClass>
+        <texPath>Things/Building/PitGate/PitGate</texPath>
+        <drawSize>(8,8)</drawSize>
+    </graphicData>
+    <altitudeLayer>FloorEmplacement</altitudeLayer>
+    <passability>Impassable</passability>
+    <holdsRoof>true</holdsRoof>
+    <destroyable>false</destroyable>
+    <building>
+        <isEdifice>true</isEdifice>
+        <deconstructible>false</deconstructible>
+        <isTargetable>false</isTargetable>
+        <isInert>true</isInert>
+        <claimable>false</claimable>
+        <expandHomeArea>false</expandHomeArea>
+    </building>
+    <portal>
+        <pocketMapGenerator>cavern</pocketMapGenerator>
+        <exitDef>CavernExit</exitDef>
+        <traverseSound>TraversePitGate</traverseSound>
+    </portal>
+    <statBases>
+        <Flammability>0</Flammability>
+    </statBases>
+    <inspectorTabs>
+        <li>ITab_ContentsMapPortal</li>
+    </inspectorTabs>
+    <comps>
+        <li Class="CompProperties_LeaveFilthOnDestroyed">
+        <filthDef>Filth_LooseGround</filthDef>
+        <thickness>5</thickness>
+        </li>
+    </comps>
+    </ThingDef>
+
+
+    <ThingDef ParentName="BuildingBase">
+    <defName>testCave</defName>
+    <label>Cavern Entrance</label>
+    <description>A massive, foreboding hole that connects the surface with a network of underground caves. It is possible to climb down into the cavern below. The entrance looks unstable and will collapse soon!</description>
+    <size>(4,4)</size>
+    <useHitPoints>false</useHitPoints>
+    <thingClass>MiningOverhaul.CavernEntrance</thingClass>
+    <tickerType>Normal</tickerType>
+    <rotatable>false</rotatable>
+    <terrainAffordanceNeeded>Heavy</terrainAffordanceNeeded>
+    <canOverlapZones>false</canOverlapZones>
+    <graphicData>
+        <graphicClass>Graphic_Single</graphicClass>
+        <texPath>Things/Building/PitGate/PitGate</texPath>
+        <drawSize>(4,4)</drawSize>
+    </graphicData>
+    <altitudeLayer>FloorEmplacement</altitudeLayer>
+    <passability>Impassable</passability>
+    <holdsRoof>true</holdsRoof>
+    <destroyable>false</destroyable>
+    <building>
+        <isEdifice>true</isEdifice>
+        <deconstructible>false</deconstructible>
+        <isTargetable>false</isTargetable>
+        <isInert>true</isInert>
+        <claimable>false</claimable>
+        <expandHomeArea>false</expandHomeArea>
+    </building>
+    <portal>
+        <pocketMapGenerator>cavern</pocketMapGenerator>
+        <exitDef>CavernExit</exitDef>
+        <traverseSound>TraversePitGate</traverseSound>
+    </portal>
+    <statBases>
+        <Flammability>0</Flammability>
+    </statBases>
+    <inspectorTabs>
+        <li>ITab_ContentsMapPortal</li>
+    </inspectorTabs>
+    <comps>
+        <li Class="CompProperties_LeaveFilthOnDestroyed">
+        <filthDef>Filth_LooseGround</filthDef>
+        <thickness>5</thickness>
+        </li>
+    </comps>
+    </ThingDef>
+</Defs>
