@@ -824,7 +824,7 @@ namespace MiningOverhaul
                 // Set flags based on building type
                 switch (building.def.defName)
                 {
-                    case "CommsConsole":
+                    case "CavingDefOf.CavernStabilizerUpgrade":
                         hasStabilizer = true;
                         break;
                     case "MyGenerator": 
