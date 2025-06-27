@@ -1,6 +1,9 @@
 <Defs>
 
-
+    <ThingDef ParentName="CaveExit">
+        <defName>CavernExit</defName>
+        <label>cavern exit</label>
+    </ThingDef>
 
     <ThingDef ParentName="BuildingBase" Name="CavernEntranceBase" Abstract="True">
     <defName>CavernEntranceBase</defName>

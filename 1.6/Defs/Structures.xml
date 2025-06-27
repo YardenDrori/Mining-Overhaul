@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Defs>
 
-  <ThingDef ParentName="CaveExit">
-    <defName>CavernExit</defName>
-    <label>cavern exit</label>
-  </ThingDef>
+
 
   <ThingDef ParentName="BuildingBase">
     <defName>CavernStabilizer</defName>
@@ -63,8 +60,23 @@
         </li>
     </modExtensions>
     <comps>
+        <li Class="CompProperties_Power">
+          <compClass>CompPowerTrader</compClass>
+          <shortCircuitInRain>true</shortCircuitInRain>
+          <basePowerConsumption>150</basePowerConsumption>
+        </li>
+        <li Class="MiningOverhaul.CompProperties_IncreasedPowerUsageIfCavern">
+          <basePowerConsumption>50</basePowerConsumption>
+          <activePowerConsumption>150</activePowerConsumption>
+        </li>
+        <li Class="CompProperties_Flickable"/>
+        <li Class="CompProperties_Breakdownable"/>
         <li Class="MiningOverhaul.CompProperties_CavernStabilizer" />
     </comps>
+    <researchPrerequisites>
+      <li>MicroelectronicsBasics</li>
+    </researchPrerequisites>
+    <constructionSkillPrerequisite>5</constructionSkillPrerequisite>
   </ThingDef>
 
 
