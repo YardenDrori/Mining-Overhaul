@@ -5,7 +5,13 @@ Assemblies/**/*
 
 # Ignore build artifacts
 Source/*/bin/
+Source/*/bin/**/*
 Source/*/obj/
+Source/*/obj/**/*
+bin/
+obj/
+**/bin/
+**/obj/
 *.dll
 *.pdb
 *.cache
