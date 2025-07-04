@@ -4,15 +4,15 @@
   <MiningOverhaul.POIGenStepDef>
     <defName>MO_PlantClusterContent</defName>
     <minDistanceBetweenPOIs>8</minDistanceBetweenPOIs>  <!-- Plants at least 8 tiles apart -->
-    <spawnChancePercent>100</spawnChancePercent>         <!-- 30% chance per grid cell -->
+    <spawnChancePercent>100</spawnChancePercent>        <!-- 30% chance per grid cell -->
     <poiContent>MO_PlantClusterContent</poiContent>     <!-- Use plant content -->
   </MiningOverhaul.POIGenStepDef>
 
     <MiningOverhaul.POIGenStepDef>
     <defName>MO_Brambles</defName>
-    <minDistanceBetweenPOIs>4</minDistanceBetweenPOIs>  <!-- Plants at least 8 tiles apart -->
+    <minDistanceBetweenPOIs>4</minDistanceBetweenPOIs>   <!-- Plants at least 8 tiles apart -->
     <spawnChancePercent>100</spawnChancePercent>         <!-- 30% chance per grid cell -->
-    <poiContent>MO_Brambles</poiContent>     <!-- Use plant content -->
+    <poiContent>MO_Brambles</poiContent>                 <!-- Use plant content -->
   </MiningOverhaul.POIGenStepDef>
 
 

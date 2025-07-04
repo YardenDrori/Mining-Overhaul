@@ -50,6 +50,10 @@ add warnings print
 add errors print
 when stabilizer breaks send message
 remove redundent dependencies
+enviormental story telling
+traits
+polish
+make caves draft on enter and if possible take camera with first entry
 
 
 requirement per biome:

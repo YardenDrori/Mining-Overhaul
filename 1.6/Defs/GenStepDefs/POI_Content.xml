@@ -1,5 +1,5 @@
 <Defs>
-    <MiningOverhaul.POIContentDef>
+    <MiningOverhaul.POIContentDef> <!--unused-->
         <defName>MO_PlantClusterContent</defName>
         <density>1</density> <!-- Spawn within a tile of POI center -->
         <spawnOptions>
@@ -16,13 +16,25 @@
         </spawnOptions>
     </MiningOverhaul.POIContentDef>
 
-
-    
-
-    
-
-
     <MiningOverhaul.POIContentDef>
+        <defName>MO_InsectHiveBaseSingle</defName>
+        <density>5</density>
+        <spawnOptions>
+        <li>
+            <thingDef>Plant_Brambles</thingDef>
+            <thingCount>10~20</thingCount>      <!-- Spawn 10-20 brambles -->
+            <weight>1</weight>               
+        </li>
+        </spawnOptions>
+    </MiningOverhaul.POIContentDef>
+
+
+    
+
+    
+
+
+    <MiningOverhaul.POIContentDef> <!--unused-->
         <defName>MO_Brambles</defName>
         <density>2</density> <!-- Spawn within 2 tiles of POI center -->
         <spawnOptions>
