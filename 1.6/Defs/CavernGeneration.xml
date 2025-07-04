@@ -22,10 +22,6 @@
     <li>ElevationFertility</li>
     <li>MutatorPostElevationFertility</li>
     <li>DefaultCave</li>
-    <!-- <li>cool_name</li> -->
-    <!-- <li>CaveVegetationDense</li> -->
-    <li>CaveVegetationBrambles</li>
-    <!-- <li>MO_CaveRockGeneration</li> -->
     <li>Terrain</li>
     <li>MutatorPostTerrain</li>
     <li>MutatorCriticalStructures</li>
@@ -33,6 +29,11 @@
     <li>RockChunks</li>
     <li>PlaceCavernExit</li>
     <li>DeepSteelVeins</li>
+    <li>CaveInsectHives</li>
+    <li>CavePlantClusters</li>
+    <li>CaveBrambleThickets</li>
+    <li>CaveResourceCaches</li>
+    <li>CaveCreatureLairs</li>
     <li>Plants</li>
     <li>MutatorFinal</li>
     <li>Fog</li>
