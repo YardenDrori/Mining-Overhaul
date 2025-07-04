@@ -3,7 +3,7 @@
 
 <MapGeneratorDef Name="Cavern">
   <defName>cavern</defName>
-  <label>Cavern</label>
+  <label>cavern</label>
   <isUnderground>true</isUnderground>
   <forceCaves>false</forceCaves>
   <ignoreAreaRevealedLetter>true</ignoreAreaRevealedLetter>
