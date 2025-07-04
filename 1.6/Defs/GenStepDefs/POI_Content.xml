@@ -1,50 +1,264 @@
 <Defs>
-    <MiningOverhaul.POIContentDef> <!--unused-->
-        <defName>MO_PlantClusterContent</defName>
-        <density>1</density> <!-- Spawn within a tile of POI center -->
-        <spawnOptions>
-        <li>
-            <thingDef>Plant_Grass</thingDef>
-            <thingCount>3~6</thingCount>      <!-- Spawn 3-6 grass plants -->
-            <weight>3</weight>                <!-- Common -->
-        </li>
-        <li>
-            <thingDef>Plant_Dandelion</thingDef>
-            <thingCount>1~3</thingCount>      <!-- Spawn 1-3 dandelions -->
-            <weight>2</weight>                <!-- Less common -->
-        </li>
-        </spawnOptions>
-    </MiningOverhaul.POIContentDef>
-
+    
+    <!-- INSECT HIVE ENCOUNTER - Complete scene with hive, glowpods, and defenders -->
     <MiningOverhaul.POIContentDef>
-        <defName>MO_InsectHiveBaseSingle</defName>
+        <defName>MO_InsectHiveEncounter</defName>
         <density>5</density>
-        <spawnOptions>
-        <li>
-            <thingDef>Plant_Brambles</thingDef>
-            <thingCount>10~20</thingCount>      <!-- Spawn 10-20 brambles -->
-            <weight>1</weight>               
-        </li>
-        </spawnOptions>
+        <spawnGroups>
+            <!-- Central hive structure -->
+            <li>
+                <label>Hive Core</label>
+                <spawnChance>1.0</spawnChance>
+                <pattern>Clustered</pattern>
+                <groupRadius>1</groupRadius>
+                <spawnOptions>
+                    <li>
+                        <thingDef>Hive</thingDef>
+                        <thingCount>1~2</thingCount>
+                        <weight>1</weight>
+                    </li>
+                </spawnOptions>
+            </li>
+            
+            <!-- Glowpods around the hive -->
+            <li>
+                <label>Glowpods</label>
+                <spawnChance>0.8</spawnChance>
+                <pattern>Ring</pattern>
+                <groupRadius>4</groupRadius>
+                <spawnOptions>
+                    <li>
+                        <thingDef>Plant_GlowPod</thingDef>
+                        <thingCount>3~8</thingCount>
+                        <weight>1</weight>
+                    </li>
+                </spawnOptions>
+            </li>
+            
+            <!-- Insect defenders -->
+            <li>
+                <label>Defenders</label>
+                <spawnChance>0.9</spawnChance>
+                <pattern>Scattered</pattern>
+                <groupRadius>6</groupRadius>
+                <animalOptions>
+                    <li>
+                        <pawnKindDef>Megascarab</pawnKindDef>
+                        <animalCount>2~4</animalCount>
+                        <faction>null</faction>
+                        <ageRange>0.3~0.8</ageRange>
+                        <weight>3</weight>
+                    </li>
+                    <li>
+                        <pawnKindDef>Spelopede</pawnKindDef>
+                        <animalCount>1~2</animalCount>
+                        <faction>null</faction>
+                        <ageRange>0.4~0.9</ageRange>
+                        <weight>2</weight>
+                    </li>
+                </animalOptions>
+            </li>
+            
+            <!-- Scattered insect jelly and debris -->
+            <li>
+                <label>Loot</label>
+                <spawnChance>0.7</spawnChance>
+                <pattern>Scattered</pattern>
+                <groupRadius>5</groupRadius>
+                <spawnOptions>
+                    <li>
+                        <thingDef>InsectJelly</thingDef>
+                        <thingCount>1~3</thingCount>
+                        <stackCount>5~15</stackCount>
+                        <weight>2</weight>
+                    </li>
+                    <li>
+                        <thingDef>Filth_Slime</thingDef>
+                        <thingCount>3~8</thingCount>
+                        <weight>1</weight>
+                    </li>
+                </spawnOptions>
+            </li>
+        </spawnGroups>
     </MiningOverhaul.POIContentDef>
-
-
     
-
-    
-
-
-    <MiningOverhaul.POIContentDef> <!--unused-->
-        <defName>MO_Brambles</defName>
-        <density>2</density> <!-- Spawn within 2 tiles of POI center -->
-        <spawnOptions>
-        <li>
-            <thingDef>Plant_Brambles</thingDef>
-            <thingCount>10~20</thingCount>      <!-- Spawn 10-20 brambles -->
-            <weight>1</weight>               
-        </li>
-        </spawnOptions>
+    <!-- PLANT CLUSTER - Decorative vegetation -->
+    <MiningOverhaul.POIContentDef>
+        <defName>MO_PlantCluster</defName>
+        <density>3</density>
+        <spawnGroups>
+            <!-- Main vegetation -->
+            <li>
+                <label>Main Plants</label>
+                <spawnChance>1.0</spawnChance>
+                <pattern>Clustered</pattern>
+                <groupRadius>3</groupRadius>
+                <spawnOptions>
+                    <li>
+                        <thingDef>Plant_Grass</thingDef>
+                        <thingCount>5~10</thingCount>
+                        <weight>3</weight>
+                    </li>
+                    <li>
+                        <thingDef>Plant_Dandelion</thingDef>
+                        <thingCount>2~5</thingCount>
+                        <weight>2</weight>
+                    </li>
+                </spawnOptions>
+            </li>
+            
+            <!-- Rare flowers -->
+            <li>
+                <label>Rare Flowers</label>
+                <spawnChance>0.3</spawnChance>
+                <pattern>Scattered</pattern>
+                <groupRadius>2</groupRadius>
+                <spawnOptions>
+                    <li>
+                        <thingDef>Plant_Rose</thingDef>
+                        <thingCount>1~2</thingCount>
+                        <weight>1</weight>
+                    </li>
+                </spawnOptions>
+            </li>
+        </spawnGroups>
     </MiningOverhaul.POIContentDef>
-
-
+    
+    <!-- BRAMBLE THICKET - Defensive plant barrier -->
+    <MiningOverhaul.POIContentDef>
+        <defName>MO_BrambleThicket</defName>
+        <density>4</density>
+        <spawnGroups>
+            <!-- Dense bramble wall -->
+            <li>
+                <label>Bramble Wall</label>
+                <spawnChance>1.0</spawnChance>
+                <pattern>Line</pattern>
+                <groupRadius>4</groupRadius>
+                <spawnOptions>
+                    <li>
+                        <thingDef>Plant_Brambles</thingDef>
+                        <thingCount>8~15</thingCount>
+                        <weight>1</weight>
+                    </li>
+                </spawnOptions>
+            </li>
+            
+            <!-- Scattered brambles around the wall -->
+            <li>
+                <label>Scattered Brambles</label>
+                <spawnChance>0.6</spawnChance>
+                <pattern>Scattered</pattern>
+                <groupRadius>6</groupRadius>
+                <spawnOptions>
+                    <li>
+                        <thingDef>Plant_Brambles</thingDef>
+                        <thingCount>3~8</thingCount>
+                        <weight>1</weight>
+                    </li>
+                </spawnOptions>
+            </li>
+        </spawnGroups>
+    </MiningOverhaul.POIContentDef>
+    
+    <!-- RESOURCE CACHE - Scattered valuable items -->
+    <MiningOverhaul.POIContentDef>
+        <defName>MO_ResourceCache</defName>
+        <density>2</density>
+        <spawnGroups>
+            <!-- Metal chunks -->
+            <li>
+                <label>Metal Deposits</label>
+                <spawnChance>0.8</spawnChance>
+                <pattern>Clustered</pattern>
+                <groupRadius>2</groupRadius>
+                <spawnOptions>
+                    <li>
+                        <thingDef>ChunkSlagSteel</thingDef>
+                        <thingCount>2~4</thingCount>
+                        <weight>3</weight>
+                    </li>
+                    <li>
+                        <thingDef>ChunkSlagSilver</thingDef>
+                        <thingCount>1~2</thingCount>
+                        <weight>2</weight>
+                    </li>
+                </spawnOptions>
+            </li>
+            
+            <!-- Rare components -->
+            <li>
+                <label>Ancient Components</label>
+                <spawnChance>0.4</spawnChance>
+                <pattern>Scattered</pattern>
+                <groupRadius>3</groupRadius>
+                <spawnOptions>
+                    <li>
+                        <thingDef>ComponentIndustrial</thingDef>
+                        <thingCount>1~3</thingCount>
+                        <stackCount>1~2</stackCount>
+                        <weight>2</weight>
+                    </li>
+                    <li>
+                        <thingDef>ComponentSpacer</thingDef>
+                        <thingCount>1</thingCount>
+                        <stackCount>1</stackCount>
+                        <weight>1</weight>
+                    </li>
+                </spawnOptions>
+            </li>
+        </spawnGroups>
+    </MiningOverhaul.POIContentDef>
+    
+    <!-- DANGEROUS CREATURE LAIR - Hostile animals with environmental hazards -->
+    <MiningOverhaul.POIContentDef>
+        <defName>MO_CreatureLair</defName>
+        <density>4</density>
+        <spawnGroups>
+            <!-- Lair creatures -->
+            <li>
+                <label>Predators</label>
+                <spawnChance>0.9</spawnChance>
+                <pattern>Clustered</pattern>
+                <groupRadius>3</groupRadius>
+                <animalOptions>
+                    <li>
+                        <pawnKindDef>Warg</pawnKindDef>
+                        <animalCount>1~3</animalCount>
+                        <faction>null</faction>
+                        <ageRange>0.5~1.0</ageRange>
+                        <weight>2</weight>
+                    </li>
+                    <li>
+                        <pawnKindDef>Bear_Cave</pawnKindDef>
+                        <animalCount>1~2</animalCount>
+                        <faction>null</faction>
+                        <ageRange>0.6~1.0</ageRange>
+                        <weight>1</weight>
+                    </li>
+                </animalOptions>
+            </li>
+            
+            <!-- Bones and remains -->
+            <li>
+                <label>Remains</label>
+                <spawnChance>0.7</spawnChance>
+                <pattern>Scattered</pattern>
+                <groupRadius>5</groupRadius>
+                <spawnOptions>
+                    <li>
+                        <thingDef>Filth_Blood</thingDef>
+                        <thingCount>3~8</thingCount>
+                        <weight>2</weight>
+                    </li>
+                    <li>
+                        <thingDef>Bone_Human</thingDef>
+                        <thingCount>1~4</thingCount>
+                        <weight>1</weight>
+                    </li>
+                </spawnOptions>
+            </li>
+        </spawnGroups>
+    </MiningOverhaul.POIContentDef>
+    
 </Defs>

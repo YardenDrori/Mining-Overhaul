@@ -1,19 +1,46 @@
 <Defs>
 
-  <!-- Plant POI Generation -->
+  <!-- INSECT HIVE ENCOUNTERS - Dangerous but rewarding -->
   <MiningOverhaul.POIGenStepDef>
-    <defName>MO_PlantClusterContent</defName>
-    <minDistanceBetweenPOIs>8</minDistanceBetweenPOIs>  <!-- Plants at least 8 tiles apart -->
-    <spawnChancePercent>100</spawnChancePercent>        <!-- 30% chance per grid cell -->
-    <poiContent>MO_PlantClusterContent</poiContent>     <!-- Use plant content -->
+    <defName>MO_InsectHiveGen</defName>
+    <minDistanceBetweenPOIs>20</minDistanceBetweenPOIs>  <!-- Keep hives far apart -->
+    <spawnChancePercent>15</spawnChancePercent>          <!-- 15% chance per grid cell -->
+    <poiContent>MO_InsectHiveEncounter</poiContent>
+    <allowedBiomes>
+      <!-- Add specific cave biomes here when available -->
+    </allowedBiomes>
   </MiningOverhaul.POIGenStepDef>
 
-    <MiningOverhaul.POIGenStepDef>
-    <defName>MO_Brambles</defName>
-    <minDistanceBetweenPOIs>4</minDistanceBetweenPOIs>   <!-- Plants at least 8 tiles apart -->
-    <spawnChancePercent>100</spawnChancePercent>         <!-- 30% chance per grid cell -->
-    <poiContent>MO_Brambles</poiContent>                 <!-- Use plant content -->
+  <!-- PLANT CLUSTERS - Decorative vegetation -->
+  <MiningOverhaul.POIGenStepDef>
+    <defName>MO_PlantClusterGen</defName>
+    <minDistanceBetweenPOIs>8</minDistanceBetweenPOIs>   <!-- Plants reasonably spaced -->
+    <spawnChancePercent>25</spawnChancePercent>          <!-- 25% chance per grid cell -->
+    <poiContent>MO_PlantCluster</poiContent>
   </MiningOverhaul.POIGenStepDef>
 
+  <!-- BRAMBLE THICKETS - Natural barriers -->
+  <MiningOverhaul.POIGenStepDef>
+    <defName>MO_BrambleThicketGen</defName>
+    <minDistanceBetweenPOIs>12</minDistanceBetweenPOIs>  <!-- Thickets reasonably spaced -->
+    <spawnChancePercent>20</spawnChancePercent>          <!-- 20% chance per grid cell -->
+    <poiContent>MO_BrambleThicket</poiContent>
+  </MiningOverhaul.POIGenStepDef>
+
+  <!-- RESOURCE CACHES - Valuable finds -->
+  <MiningOverhaul.POIGenStepDef>
+    <defName>MO_ResourceCacheGen</defName>
+    <minDistanceBetweenPOIs>15</minDistanceBetweenPOIs>  <!-- Keep caches spread out -->
+    <spawnChancePercent>10</spawnChancePercent>          <!-- 10% chance per grid cell -->
+    <poiContent>MO_ResourceCache</poiContent>
+  </MiningOverhaul.POIGenStepDef>
+
+  <!-- CREATURE LAIRS - Dangerous predator nests -->
+  <MiningOverhaul.POIGenStepDef>
+    <defName>MO_CreatureLairGen</defName>
+    <minDistanceBetweenPOIs>25</minDistanceBetweenPOIs>  <!-- Keep lairs far apart -->
+    <spawnChancePercent>8</spawnChancePercent>           <!-- 8% chance per grid cell -->
+    <poiContent>MO_CreatureLair</poiContent>
+  </MiningOverhaul.POIGenStepDef>
 
 </Defs>
