@@ -28,18 +28,8 @@
                 <groupRadius>4</groupRadius>
                 <spawnOptions>
                     <li>
-                        <thingDef>Plant_GlowstalkPod</thingDef>
+                        <thingDef>Plant_Brambles</thingDef>
                         <thingCount>3~8</thingCount>
-                        <weight>3</weight>
-                    </li>
-                    <li>
-                        <thingDef>Plant_Mushroom_Glowshroom</thingDef>
-                        <thingCount>2~6</thingCount>
-                        <weight>2</weight>
-                    </li>
-                    <li>
-                        <thingDef>Plant_ShroomGlow</thingDef>
-                        <thingCount>2~5</thingCount>
                         <weight>1</weight>
                     </li>
                 </spawnOptions>

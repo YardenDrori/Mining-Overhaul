@@ -77,16 +77,27 @@ namespace MiningOverhaul
             this.map = map;
             usedPositions.Clear();
 
-            if (genStepDef?.poiContent?.spawnGroups == null) return;
+            if (genStepDef?.poiContent?.spawnGroups == null)
+            {
+                MOLog.Warning($"POI GenStep {genStepDef?.defName ?? "unknown"} has no spawn groups defined");
+                return;
+            }
+
+            MOLog.Message($"Starting POI generation for {genStepDef.defName} on map {map.uniqueID}");
+            MOLog.Message($"POI Config: minDistance={genStepDef.minDistanceBetweenPOIs}, spawnChance={genStepDef.spawnChancePercent}%, minFromEntrance={genStepDef.minDistanceFromEntrance}");
+            MOLog.Message($"Spawn groups: {genStepDef.poiContent.spawnGroups.Count}");
 
             // Check biome restriction
             if (!genStepDef.allowedBiomes.NullOrEmpty())
             {
+                MOLog.Message($"Biome restrictions: {string.Join(", ", genStepDef.allowedBiomes)}");
                 // Add your cave biome detection here when ready
                 // For now, always allow
             }
 
             GeneratePOIs();
+            
+            MOLog.Message($"POI generation complete. Spawned {usedPositions.Count} POIs of type {genStepDef.defName}");
         }
 
         private void GeneratePOIs()
@@ -94,43 +105,76 @@ namespace MiningOverhaul
             int gridSize = Mathf.RoundToInt(genStepDef.minDistanceBetweenPOIs);
             if (gridSize < 1) gridSize = 1;
 
+            int gridCells = 0;
+            int spawnAttempts = 0;
+            int validSpots = 0;
+            IntVec3 entrancePos = FindCaveEntrance();
+            
+            MOLog.Message($"Grid size: {gridSize}, Map size: {map.Size}, Entrance at: {entrancePos}");
+
             // Go through map in grid pattern
             for (int x = 0; x < map.Size.x; x += gridSize)
             {
                 for (int z = 0; z < map.Size.z; z += gridSize)
                 {
+                    gridCells++;
+                    
                     // Roll for spawn chance
                     if (Rand.Range(0f, 100f) <= genStepDef.spawnChancePercent)
                     {
+                        spawnAttempts++;
                         IntVec3 centerPos = new IntVec3(x + Rand.Range(0, gridSize), 0, z + Rand.Range(0, gridSize));
                         centerPos = centerPos.ClampInsideMap(map);
                         
                         if (IsValidPOISpot(centerPos))
                         {
+                            validSpots++;
+                            MOLog.Message($"Spawning POI at {centerPos} (distance from entrance: {centerPos.DistanceTo(entrancePos):F1})");
                             SpawnPOI(centerPos);
+                        }
+                        else
+                        {
+                            MOLog.Message($"Invalid POI spot at {centerPos} (distance from entrance: {centerPos.DistanceTo(entrancePos):F1})");
                         }
                     }
                 }
             }
+            
+            MOLog.Message($"POI Generation Stats: {gridCells} grid cells, {spawnAttempts} spawn attempts, {validSpots} valid spots, {usedPositions.Count} POIs spawned");
         }
 
         private bool IsValidPOISpot(IntVec3 pos)
         {
-            if (!pos.InBounds(map)) return false;
+            if (!pos.InBounds(map))
+            {
+                MOLog.Message($"Position {pos} out of bounds");
+                return false;
+            }
 
             // Check distance from other POIs of same type
             foreach (IntVec3 usedPos in usedPositions)
             {
-                if (pos.DistanceTo(usedPos) < genStepDef.minDistanceBetweenPOIs)
+                float distance = pos.DistanceTo(usedPos);
+                if (distance < genStepDef.minDistanceBetweenPOIs)
+                {
+                    MOLog.Message($"Position {pos} too close to existing POI at {usedPos} (distance: {distance:F1}, required: {genStepDef.minDistanceBetweenPOIs})");
                     return false;
+                }
             }
 
             // Check distance from cave entrance if specified
             if (genStepDef.minDistanceFromEntrance > 0f)
             {
                 IntVec3 entrancePos = FindCaveEntrance();
-                if (entrancePos != IntVec3.Invalid && pos.DistanceTo(entrancePos) < genStepDef.minDistanceFromEntrance)
-                    return false;
+                if (entrancePos != IntVec3.Invalid)
+                {
+                    float entranceDistance = pos.DistanceTo(entrancePos);
+                    if (entranceDistance < genStepDef.minDistanceFromEntrance)
+                    {
+                        MOLog.Message($"Position {pos} too close to entrance at {entrancePos} (distance: {entranceDistance:F1}, required: {genStepDef.minDistanceFromEntrance})");
+                        return false;
+                    }
+                }
             }
 
             return true;
@@ -146,6 +190,7 @@ namespace MiningOverhaul
             {
                 if (building.def.defName == "CavernExit")
                 {
+                    MOLog.Message($"Found CavernExit building at {building.Position}");
                     return building.Position;
                 }
             }
@@ -155,20 +200,24 @@ namespace MiningOverhaul
             {
                 if (thing.def.defName == "CavernExit")
                 {
+                    MOLog.Message($"Found CavernExit thing at {thing.Position}");
                     return thing.Position;
                 }
             }
             
             // Fallback: use map center if no exit found
+            MOLog.Warning($"No CavernExit found, using map center {map.Center} as entrance position");
             return map.Center;
         }
 
         private void SpawnPOI(IntVec3 centerPos)
         {
             usedPositions.Add(centerPos);
+            MOLog.Message($"Spawning POI at {centerPos} with {genStepDef.poiContent.spawnGroups.Count} potential groups");
 
             // Track positions used by THIS POI to avoid overlap
             List<IntVec3> thisPOIPositions = new List<IntVec3>();
+            int groupsSpawned = 0;
 
             // Spawn each group
             foreach (POISpawnGroup group in genStepDef.poiContent.spawnGroups)
@@ -176,29 +225,50 @@ namespace MiningOverhaul
                 // Check if this group should spawn
                 if (Rand.Chance(group.spawnChance))
                 {
+                    MOLog.Message($"Spawning group '{group.label}' (chance: {group.spawnChance:P0}, pattern: {group.pattern}, radius: {group.groupRadius})");
                     SpawnGroup(group, centerPos, thisPOIPositions);
+                    groupsSpawned++;
+                }
+                else
+                {
+                    MOLog.Message($"Skipping group '{group.label}' (failed {group.spawnChance:P0} chance roll)");
                 }
             }
+            
+            MOLog.Message($"POI at {centerPos} complete: {groupsSpawned}/{genStepDef.poiContent.spawnGroups.Count} groups spawned, {thisPOIPositions.Count} total things placed");
         }
         
         private void SpawnGroup(POISpawnGroup group, IntVec3 centerPos, List<IntVec3> thisPOIPositions)
         {
             // Get positions for this group based on pattern
             List<IntVec3> groupPositions = GetGroupPositions(group, centerPos, thisPOIPositions);
+            MOLog.Message($"Group '{group.label}': found {groupPositions.Count} valid positions for pattern {group.pattern}");
+            
+            int itemsSpawned = 0;
+            int animalsSpawned = 0;
             
             // Spawn regular items/terrain
             foreach (POISpawnOption option in group.spawnOptions)
             {
                 int thingsToSpawn = option.thingCount.RandomInRange;
+                MOLog.Message($"Attempting to spawn {thingsToSpawn} {option.thingDef?.defName ?? "null thing"}");
                 
                 for (int i = 0; i < thingsToSpawn; i++)
                 {
                     IntVec3 spawnPos = GetBestPositionFromList(groupPositions, thisPOIPositions);
                     if (spawnPos != IntVec3.Invalid)
                     {
-                        SpawnSingleThing(option, spawnPos);
-                        thisPOIPositions.Add(spawnPos);
-                        groupPositions.Remove(spawnPos); // Don't use this position again
+                        bool success = SpawnSingleThing(option, spawnPos);
+                        if (success)
+                        {
+                            itemsSpawned++;
+                            thisPOIPositions.Add(spawnPos);
+                            groupPositions.Remove(spawnPos);
+                        }
+                    }
+                    else
+                    {
+                        MOLog.Message($"No valid position found for {option.thingDef?.defName}");
                     }
                 }
             }
@@ -207,18 +277,29 @@ namespace MiningOverhaul
             foreach (POIAnimalOption option in group.animalOptions)
             {
                 int animalsToSpawn = option.animalCount.RandomInRange;
+                MOLog.Message($"Attempting to spawn {animalsToSpawn} {option.pawnKindDef?.defName ?? "null pawn"}");
                 
                 for (int i = 0; i < animalsToSpawn; i++)
                 {
                     IntVec3 spawnPos = GetBestPositionFromList(groupPositions, thisPOIPositions);
                     if (spawnPos != IntVec3.Invalid)
                     {
-                        SpawnSingleAnimal(option, spawnPos);
-                        thisPOIPositions.Add(spawnPos);
-                        groupPositions.Remove(spawnPos); // Don't use this position again
+                        bool success = SpawnSingleAnimal(option, spawnPos);
+                        if (success)
+                        {
+                            animalsSpawned++;
+                            thisPOIPositions.Add(spawnPos);
+                            groupPositions.Remove(spawnPos);
+                        }
+                    }
+                    else
+                    {
+                        MOLog.Message($"No valid position found for {option.pawnKindDef?.defName}");
                     }
                 }
             }
+            
+            MOLog.Message($"Group '{group.label}' complete: {itemsSpawned} items, {animalsSpawned} animals spawned");
         }
         
         private List<IntVec3> GetGroupPositions(POISpawnGroup group, IntVec3 centerPos, List<IntVec3> usedPositions)
@@ -346,73 +427,119 @@ namespace MiningOverhaul
             return true;
         }
 
-        private void SpawnSingleAnimal(POIAnimalOption animalOption, IntVec3 pos)
+        private bool SpawnSingleAnimal(POIAnimalOption animalOption, IntVec3 pos)
         {
-            if (animalOption.pawnKindDef == null) return;
-
-            // Get faction (null = wild animals)
-            Faction faction = null;
-            if (!animalOption.faction.NullOrEmpty() && animalOption.faction != "null")
+            if (animalOption.pawnKindDef == null)
             {
-                faction = Find.FactionManager.FirstFactionOfDef(FactionDef.Named(animalOption.faction));
+                MOLog.Error($"Null pawnKindDef in animal option");
+                return false;
             }
 
-            // Generate the pawn
-            PawnGenerationRequest request = new PawnGenerationRequest(
-                animalOption.pawnKindDef,
-                faction: faction,
-                context: PawnGenerationContext.NonPlayer,
-                tile: map.Tile,
-                forceGenerateNewPawn: true,
-                fixedGender: animalOption.gender
-            );
-
-            Pawn pawn = PawnGenerator.GeneratePawn(request);
-            if (pawn == null) return;
-
-            // Set age
-            float targetAge = pawn.RaceProps.lifeExpectancy * animalOption.ageRange.RandomInRange;
-            pawn.ageTracker.AgeBiologicalTicks = (long)(targetAge * 3600000f); // Convert years to ticks
-            pawn.ageTracker.AgeChronologicalTicks = pawn.ageTracker.AgeBiologicalTicks;
-
-            // Spawn the animal
-            GenSpawn.Spawn(pawn, pos, map);
-        }
-
-        private void SpawnSingleThing(POISpawnOption option, IntVec3 pos)
-        {
-            if (option.thingDef != null)
+            try
             {
-                Thing thing = ThingMaker.MakeThing(option.thingDef);
-                if (thing == null) return;
-
-                // Set stack count
-                if (thing.def.stackLimit > 1)
+                // Get faction (null = wild animals)
+                Faction faction = null;
+                if (!animalOption.faction.NullOrEmpty() && animalOption.faction != "null")
                 {
-                    thing.stackCount = Mathf.Min(option.stackCount.RandomInRange, thing.def.stackLimit);
-                }
-
-                // Set quality if applicable
-                CompQuality qualityComp = thing.TryGetComp<CompQuality>();
-                if (qualityComp != null && option.qualityRange != QualityRange.All)
-                {
-                    var validQualities = System.Enum.GetValues(typeof(QualityCategory))
-                        .Cast<QualityCategory>()
-                        .Where(q => option.qualityRange.Includes(q))
-                        .ToArray();
-                    
-                    if (validQualities.Length > 0)
+                    faction = Find.FactionManager.FirstFactionOfDef(FactionDef.Named(animalOption.faction));
+                    if (faction == null)
                     {
-                        QualityCategory randomQuality = validQualities.RandomElement();
-                        qualityComp.SetQuality(randomQuality, ArtGenerationContext.Outsider);
+                        MOLog.Warning($"Could not find faction '{animalOption.faction}' for {animalOption.pawnKindDef.defName}");
                     }
                 }
 
-                GenSpawn.Spawn(thing, pos, map);
+                // Generate the pawn
+                PawnGenerationRequest request = new PawnGenerationRequest(
+                    animalOption.pawnKindDef,
+                    faction: faction,
+                    context: PawnGenerationContext.NonPlayer,
+                    tile: map.Tile,
+                    forceGenerateNewPawn: true,
+                    fixedGender: animalOption.gender
+                );
+
+                Pawn pawn = PawnGenerator.GeneratePawn(request);
+                if (pawn == null)
+                {
+                    MOLog.Error($"Failed to generate pawn of type {animalOption.pawnKindDef.defName}");
+                    return false;
+                }
+
+                // Set age
+                float targetAge = pawn.RaceProps.lifeExpectancy * animalOption.ageRange.RandomInRange;
+                pawn.ageTracker.AgeBiologicalTicks = (long)(targetAge * 3600000f);
+                pawn.ageTracker.AgeChronologicalTicks = pawn.ageTracker.AgeBiologicalTicks;
+
+                // Spawn the animal
+                GenSpawn.Spawn(pawn, pos, map);
+                MOLog.Message($"Spawned {animalOption.pawnKindDef.defName} at {pos} (age: {targetAge:F1} years)");
+                return true;
             }
-            else if (option.terrainDef != null)
+            catch (System.Exception e)
             {
-                map.terrainGrid.SetTerrain(pos, option.terrainDef);
+                MOLog.Error($"Exception spawning {animalOption.pawnKindDef?.defName}: {e.Message}");
+                return false;
+            }
+        }
+
+        private bool SpawnSingleThing(POISpawnOption option, IntVec3 pos)
+        {
+            try
+            {
+                if (option.thingDef != null)
+                {
+                    Thing thing = ThingMaker.MakeThing(option.thingDef);
+                    if (thing == null)
+                    {
+                        MOLog.Error($"Failed to make thing of type {option.thingDef.defName}");
+                        return false;
+                    }
+
+                    // Set stack count
+                    if (thing.def.stackLimit > 1)
+                    {
+                        int stackSize = option.stackCount.RandomInRange;
+                        thing.stackCount = Mathf.Min(stackSize, thing.def.stackLimit);
+                        MOLog.Message($"Set stack count to {thing.stackCount} (requested: {stackSize}, limit: {thing.def.stackLimit})");
+                    }
+
+                    // Set quality if applicable
+                    CompQuality qualityComp = thing.TryGetComp<CompQuality>();
+                    if (qualityComp != null && option.qualityRange != QualityRange.All)
+                    {
+                        var validQualities = System.Enum.GetValues(typeof(QualityCategory))
+                            .Cast<QualityCategory>()
+                            .Where(q => option.qualityRange.Includes(q))
+                            .ToArray();
+                        
+                        if (validQualities.Length > 0)
+                        {
+                            QualityCategory randomQuality = validQualities.RandomElement();
+                            qualityComp.SetQuality(randomQuality, ArtGenerationContext.Outsider);
+                            MOLog.Message($"Set quality to {randomQuality}");
+                        }
+                    }
+
+                    GenSpawn.Spawn(thing, pos, map);
+                    MOLog.Message($"Spawned {option.thingDef.defName} at {pos}");
+                    return true;
+                }
+                else if (option.terrainDef != null)
+                {
+                    map.terrainGrid.SetTerrain(pos, option.terrainDef);
+                    MOLog.Message($"Set terrain to {option.terrainDef.defName} at {pos}");
+                    return true;
+                }
+                else
+                {
+                    MOLog.Error($"POI spawn option has neither thingDef nor terrainDef");
+                    return false;
+                }
+            }
+            catch (System.Exception e)
+            {
+                MOLog.Error($"Exception spawning thing {option.thingDef?.defName}: {e.Message}");
+                return false;
             }
         }
     }
