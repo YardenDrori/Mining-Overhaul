@@ -6,5 +6,5 @@ public static class CavingDefOf
 {
     public static ThingDef CavernAcessPointTierOne;
     public static ThingDef CavernSpawnerTierOne;
-    public static ThingDef CavernStabilizerUpgrade;
+    public static ThingDef CavernStabilizer;
 }

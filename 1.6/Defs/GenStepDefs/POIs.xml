@@ -1,21 +1,45 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Defs>
 
-  <!-- Example GenStepDef usage in your cave generation -->
-    <GenStepDef>
-    <defName>CaveVegetationDense</defName>
+  <!-- POI Generation Steps for Cave Content -->
+  <GenStepDef>
+    <defName>CaveInsectHives</defName>
     <order>450</order>
     <genStep Class="MiningOverhaul.GenStep_POIGeneration">
-        <genStepDef>MO_PlantClusterContent</genStepDef>
+        <genStepDef>MO_InsectHiveGen</genStepDef>
     </genStep>
-    </GenStepDef>
+  </GenStepDef>
 
-    <GenStepDef>
-    <defName>CaveVegetationBrambles</defName>
+  <GenStepDef>
+    <defName>CavePlantClusters</defName>
     <order>451</order>
     <genStep Class="MiningOverhaul.GenStep_POIGeneration">
-        <genStepDef>MO_Brambles</genStepDef>
+        <genStepDef>MO_PlantClusterGen</genStepDef>
     </genStep>
-    </GenStepDef>
+  </GenStepDef>
+
+  <GenStepDef>
+    <defName>CaveBrambleThickets</defName>
+    <order>452</order>
+    <genStep Class="MiningOverhaul.GenStep_POIGeneration">
+        <genStepDef>MO_BrambleThicketGen</genStepDef>
+    </genStep>
+  </GenStepDef>
+
+  <GenStepDef>
+    <defName>CaveResourceCaches</defName>
+    <order>453</order>
+    <genStep Class="MiningOverhaul.GenStep_POIGeneration">
+        <genStepDef>MO_ResourceCacheGen</genStepDef>
+    </genStep>
+  </GenStepDef>
+
+  <GenStepDef>
+    <defName>CaveCreatureLairs</defName>
+    <order>454</order>
+    <genStep Class="MiningOverhaul.GenStep_POIGeneration">
+        <genStepDef>MO_CreatureLairGen</genStepDef>
+    </genStep>
+  </GenStepDef>
 
 </Defs>

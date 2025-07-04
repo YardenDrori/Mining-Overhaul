@@ -28,7 +28,7 @@
                 <groupRadius>4</groupRadius>
                 <spawnOptions>
                     <li>
-                        <thingDef>Plant_GlowPod</thingDef>
+                        <thingDef>Plant_Brambles</thingDef>
                         <thingCount>3~8</thingCount>
                         <weight>1</weight>
                     </li>
@@ -179,8 +179,9 @@
                         <weight>3</weight>
                     </li>
                     <li>
-                        <thingDef>ChunkSlagSilver</thingDef>
+                        <thingDef>Silver</thingDef>
                         <thingCount>1~2</thingCount>
+                        <stackCount>15~35</stackCount>
                         <weight>2</weight>
                     </li>
                 </spawnOptions>
@@ -230,7 +231,7 @@
                         <weight>2</weight>
                     </li>
                     <li>
-                        <pawnKindDef>Bear_Cave</pawnKindDef>
+                        <pawnKindDef>Bear_Grizzly</pawnKindDef>
                         <animalCount>1~2</animalCount>
                         <faction>null</faction>
                         <ageRange>0.6~1.0</ageRange>
@@ -252,8 +253,9 @@
                         <weight>2</weight>
                     </li>
                     <li>
-                        <thingDef>Bone_Human</thingDef>
+                        <thingDef>Meat_Human</thingDef>
                         <thingCount>1~4</thingCount>
+                        <stackCount>5~15</stackCount>
                         <weight>1</weight>
                     </li>
                 </spawnOptions>

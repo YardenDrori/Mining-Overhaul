@@ -19,11 +19,7 @@ namespace MiningOverhaul
     public class POIContentDef : Def
     {
         public float density = 2f;                    // How close together spawned things are (radius)
-        public List<POISpawnGroup> spawnGroups = new List<POISpawnGroup>(); // NEW: Grouped spawning
-        
-        // Legacy support - will be converted to spawnGroups automatically
-        public List<POISpawnOption> spawnOptions = new List<POISpawnOption>();
-        public List<POIAnimalOption> animalOptions = new List<POIAnimalOption>();
+        public List<POISpawnGroup> spawnGroups = new List<POISpawnGroup>(); // Grouped spawning
     }
     
     // NEW: Spawn groups for related things
@@ -80,10 +76,7 @@ namespace MiningOverhaul
             this.map = map;
             usedPositions.Clear();
 
-            if (genStepDef?.poiContent == null) return;
-
-            // Convert legacy format to new group format if needed
-            ConvertLegacyFormat();
+            if (genStepDef?.poiContent?.spawnGroups == null) return;
 
             // Check biome restriction
             if (!genStepDef.allowedBiomes.NullOrEmpty())
@@ -93,26 +86,6 @@ namespace MiningOverhaul
             }
 
             GeneratePOIs();
-        }
-        
-        private void ConvertLegacyFormat()
-        {
-            // If we have old format data but no groups, convert it
-            if (genStepDef.poiContent.spawnGroups.NullOrEmpty() && 
-                (!genStepDef.poiContent.spawnOptions.NullOrEmpty() || !genStepDef.poiContent.animalOptions.NullOrEmpty()))
-            {
-                var legacyGroup = new POISpawnGroup
-                {
-                    label = "Legacy Group",
-                    spawnChance = 1f,
-                    pattern = SpawnPattern.Clustered,
-                    groupRadius = genStepDef.poiContent.density,
-                    spawnOptions = genStepDef.poiContent.spawnOptions ?? new List<POISpawnOption>(),
-                    animalOptions = genStepDef.poiContent.animalOptions ?? new List<POIAnimalOption>()
-                };
-                
-                genStepDef.poiContent.spawnGroups.Add(legacyGroup);
-            }
         }
 
         private void GeneratePOIs()
