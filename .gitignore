@@ -1,0 +1,16 @@
+# Ignore compiled assemblies
+Assemblies/
+
+# Ignore build artifacts
+Source/*/bin/
+Source/*/obj/
+
+# Ignore IDE files
+.vs/
+*.csproj.user
+*.suo
+*.cache
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
