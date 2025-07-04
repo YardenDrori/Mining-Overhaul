@@ -13,6 +13,7 @@ namespace MiningOverhaul
         {
             new Harmony("blacksparrow.MiningOverhaul").PatchAll();
             Log.Message("Mining Overhaul: Mod loaded successfully!");
+            MOLog.Message("Harmony patches applied");
         }
     }
     

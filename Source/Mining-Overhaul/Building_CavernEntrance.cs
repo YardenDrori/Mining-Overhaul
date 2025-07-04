@@ -267,7 +267,7 @@ namespace MiningOverhaul
             EffecterDefOf.ImpactDustCloud.Spawn(base.Position, base.Map).Cleanup();
             Find.CameraDriver.shaker.DoShake(0.1f);
             
-            Log.Message("Cave entrance collapsed before anyone entered");
+            MOLog.Message("Cave entrance collapsed before anyone entered");
             
             // Destroy the entrance
             Thing.allowDestroyNonDestroyable = true;
@@ -656,7 +656,7 @@ namespace MiningOverhaul
             {
                 if (isCollapsing)
                 {
-                    Log.Message("Cave completely filled - triggering final collapse");
+                    MOLog.Message("Cave completely filled - triggering final collapse");
                     Collapse();
                     return;
                 }
@@ -759,7 +759,7 @@ namespace MiningOverhaul
             isCollapsing = true;
             collapseTick = Find.TickManager.TicksGame; // Set when collapse started
             // The accelerated blocking system will handle filling the cave
-            Log.Message("Cave collapse started - accelerated blocking begins");
+            MOLog.Message("Cave collapse started - accelerated blocking begins");
         }
 
         public void Collapse()

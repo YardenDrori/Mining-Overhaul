@@ -83,9 +83,7 @@ namespace MiningOverhaul
                 return;
             }
 
-            MOLog.Message($"Starting POI generation for {genStepDef.defName} on map {map.uniqueID}");
-            MOLog.Message($"POI Config: minDistance={genStepDef.minDistanceBetweenPOIs}, spawnChance={genStepDef.spawnChancePercent}%, minFromEntrance={genStepDef.minDistanceFromEntrance}");
-            MOLog.Message($"Spawn groups: {genStepDef.poiContent.spawnGroups.Count}");
+            MOLog.Message($"Starting POI generation for {genStepDef.defName} (chance: {genStepDef.spawnChancePercent}%, groups: {genStepDef.poiContent.spawnGroups.Count})");
 
             // Check biome restriction
             if (!genStepDef.allowedBiomes.NullOrEmpty())
@@ -110,7 +108,7 @@ namespace MiningOverhaul
             int validSpots = 0;
             IntVec3 entrancePos = FindCaveEntrance();
             
-            MOLog.Message($"Grid size: {gridSize}, Map size: {map.Size}, Entrance at: {entrancePos}");
+            MOLog.Message($"Grid size: {gridSize}, Entrance at: {entrancePos}");
 
             // Go through map in grid pattern
             for (int x = 0; x < map.Size.x; x += gridSize)
@@ -129,12 +127,7 @@ namespace MiningOverhaul
                         if (IsValidPOISpot(centerPos))
                         {
                             validSpots++;
-                            MOLog.Message($"Spawning POI at {centerPos} (distance from entrance: {centerPos.DistanceTo(entrancePos):F1})");
                             SpawnPOI(centerPos);
-                        }
-                        else
-                        {
-                            MOLog.Message($"Invalid POI spot at {centerPos} (distance from entrance: {centerPos.DistanceTo(entrancePos):F1})");
                         }
                     }
                 }
@@ -145,21 +138,14 @@ namespace MiningOverhaul
 
         private bool IsValidPOISpot(IntVec3 pos)
         {
-            if (!pos.InBounds(map))
-            {
-                MOLog.Message($"Position {pos} out of bounds");
-                return false;
-            }
+            if (!pos.InBounds(map)) return false;
 
             // Check distance from other POIs of same type
             foreach (IntVec3 usedPos in usedPositions)
             {
                 float distance = pos.DistanceTo(usedPos);
                 if (distance < genStepDef.minDistanceBetweenPOIs)
-                {
-                    MOLog.Message($"Position {pos} too close to existing POI at {usedPos} (distance: {distance:F1}, required: {genStepDef.minDistanceBetweenPOIs})");
                     return false;
-                }
             }
 
             // Check distance from cave entrance if specified
@@ -170,10 +156,7 @@ namespace MiningOverhaul
                 {
                     float entranceDistance = pos.DistanceTo(entrancePos);
                     if (entranceDistance < genStepDef.minDistanceFromEntrance)
-                    {
-                        MOLog.Message($"Position {pos} too close to entrance at {entrancePos} (distance: {entranceDistance:F1}, required: {genStepDef.minDistanceFromEntrance})");
                         return false;
-                    }
                 }
             }
 
@@ -213,7 +196,6 @@ namespace MiningOverhaul
         private void SpawnPOI(IntVec3 centerPos)
         {
             usedPositions.Add(centerPos);
-            MOLog.Message($"Spawning POI at {centerPos} with {genStepDef.poiContent.spawnGroups.Count} potential groups");
 
             // Track positions used by THIS POI to avoid overlap
             List<IntVec3> thisPOIPositions = new List<IntVec3>();
@@ -225,24 +207,18 @@ namespace MiningOverhaul
                 // Check if this group should spawn
                 if (Rand.Chance(group.spawnChance))
                 {
-                    MOLog.Message($"Spawning group '{group.label}' (chance: {group.spawnChance:P0}, pattern: {group.pattern}, radius: {group.groupRadius})");
                     SpawnGroup(group, centerPos, thisPOIPositions);
                     groupsSpawned++;
                 }
-                else
-                {
-                    MOLog.Message($"Skipping group '{group.label}' (failed {group.spawnChance:P0} chance roll)");
-                }
             }
             
-            MOLog.Message($"POI at {centerPos} complete: {groupsSpawned}/{genStepDef.poiContent.spawnGroups.Count} groups spawned, {thisPOIPositions.Count} total things placed");
+            MOLog.Message($"POI at {centerPos}: {groupsSpawned} groups spawned, {thisPOIPositions.Count} items placed");
         }
         
         private void SpawnGroup(POISpawnGroup group, IntVec3 centerPos, List<IntVec3> thisPOIPositions)
         {
             // Get positions for this group based on pattern
             List<IntVec3> groupPositions = GetGroupPositions(group, centerPos, thisPOIPositions);
-            MOLog.Message($"Group '{group.label}': found {groupPositions.Count} valid positions for pattern {group.pattern}");
             
             int itemsSpawned = 0;
             int animalsSpawned = 0;
@@ -251,7 +227,6 @@ namespace MiningOverhaul
             foreach (POISpawnOption option in group.spawnOptions)
             {
                 int thingsToSpawn = option.thingCount.RandomInRange;
-                MOLog.Message($"Attempting to spawn {thingsToSpawn} {option.thingDef?.defName ?? "null thing"}");
                 
                 for (int i = 0; i < thingsToSpawn; i++)
                 {
@@ -268,7 +243,7 @@ namespace MiningOverhaul
                     }
                     else
                     {
-                        MOLog.Message($"No valid position found for {option.thingDef?.defName}");
+                        MOLog.Message($"No valid position for {option.thingDef?.defName}");
                     }
                 }
             }
@@ -277,7 +252,6 @@ namespace MiningOverhaul
             foreach (POIAnimalOption option in group.animalOptions)
             {
                 int animalsToSpawn = option.animalCount.RandomInRange;
-                MOLog.Message($"Attempting to spawn {animalsToSpawn} {option.pawnKindDef?.defName ?? "null pawn"}");
                 
                 for (int i = 0; i < animalsToSpawn; i++)
                 {
@@ -294,12 +268,13 @@ namespace MiningOverhaul
                     }
                     else
                     {
-                        MOLog.Message($"No valid position found for {option.pawnKindDef?.defName}");
+                        MOLog.Message($"No valid position for {option.pawnKindDef?.defName}");
                     }
                 }
             }
             
-            MOLog.Message($"Group '{group.label}' complete: {itemsSpawned} items, {animalsSpawned} animals spawned");
+            if (itemsSpawned > 0 || animalsSpawned > 0)
+                MOLog.Message($"Group '{group.label}': {itemsSpawned} items, {animalsSpawned} animals");
         }
         
         private List<IntVec3> GetGroupPositions(POISpawnGroup group, IntVec3 centerPos, List<IntVec3> usedPositions)
@@ -443,9 +418,7 @@ namespace MiningOverhaul
                 {
                     faction = Find.FactionManager.FirstFactionOfDef(FactionDef.Named(animalOption.faction));
                     if (faction == null)
-                    {
-                        MOLog.Warning($"Could not find faction '{animalOption.faction}' for {animalOption.pawnKindDef.defName}");
-                    }
+                        MOLog.Warning($"Faction '{animalOption.faction}' not found");
                 }
 
                 // Generate the pawn
@@ -472,7 +445,6 @@ namespace MiningOverhaul
 
                 // Spawn the animal
                 GenSpawn.Spawn(pawn, pos, map);
-                MOLog.Message($"Spawned {animalOption.pawnKindDef.defName} at {pos} (age: {targetAge:F1} years)");
                 return true;
             }
             catch (System.Exception e)
@@ -500,7 +472,6 @@ namespace MiningOverhaul
                     {
                         int stackSize = option.stackCount.RandomInRange;
                         thing.stackCount = Mathf.Min(stackSize, thing.def.stackLimit);
-                        MOLog.Message($"Set stack count to {thing.stackCount} (requested: {stackSize}, limit: {thing.def.stackLimit})");
                     }
 
                     // Set quality if applicable
@@ -516,18 +487,15 @@ namespace MiningOverhaul
                         {
                             QualityCategory randomQuality = validQualities.RandomElement();
                             qualityComp.SetQuality(randomQuality, ArtGenerationContext.Outsider);
-                            MOLog.Message($"Set quality to {randomQuality}");
                         }
                     }
 
                     GenSpawn.Spawn(thing, pos, map);
-                    MOLog.Message($"Spawned {option.thingDef.defName} at {pos}");
                     return true;
                 }
                 else if (option.terrainDef != null)
                 {
                     map.terrainGrid.SetTerrain(pos, option.terrainDef);
-                    MOLog.Message($"Set terrain to {option.terrainDef.defName} at {pos}");
                     return true;
                 }
                 else
