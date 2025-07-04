@@ -4,6 +4,7 @@
   <MiningOverhaul.POIGenStepDef>
     <defName>MO_InsectHiveGen</defName>
     <minDistanceBetweenPOIs>20</minDistanceBetweenPOIs>  <!-- Keep hives far apart -->
+    <minDistanceFromEntrance>15</minDistanceFromEntrance> <!-- Don't spawn near entrance -->
     <spawnChancePercent>15</spawnChancePercent>          <!-- 15% chance per grid cell -->
     <poiContent>MO_InsectHiveEncounter</poiContent>
     <allowedBiomes>
@@ -39,6 +40,7 @@
   <MiningOverhaul.POIGenStepDef>
     <defName>MO_CreatureLairGen</defName>
     <minDistanceBetweenPOIs>25</minDistanceBetweenPOIs>  <!-- Keep lairs far apart -->
+    <minDistanceFromEntrance>12</minDistanceFromEntrance> <!-- Don't spawn too close to entrance -->
     <spawnChancePercent>8</spawnChancePercent>           <!-- 8% chance per grid cell -->
     <poiContent>MO_CreatureLair</poiContent>
   </MiningOverhaul.POIGenStepDef>

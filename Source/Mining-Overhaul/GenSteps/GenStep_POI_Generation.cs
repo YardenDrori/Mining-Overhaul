@@ -11,6 +11,7 @@ namespace MiningOverhaul
     {
         public float minDistanceBetweenPOIs = 10f;    // Distance between POIs of same type
         public float spawnChancePercent = 20f;        // % chance for POI to spawn per grid cell
+        public float minDistanceFromEntrance = 0f;   // Minimum distance from cave entrance
         public POIContentDef poiContent;              // What this POI spawns
         public List<string> allowedBiomes = new List<string>(); // empty = all biomes
     }
@@ -124,7 +125,42 @@ namespace MiningOverhaul
                     return false;
             }
 
+            // Check distance from cave entrance if specified
+            if (genStepDef.minDistanceFromEntrance > 0f)
+            {
+                IntVec3 entrancePos = FindCaveEntrance();
+                if (entrancePos != IntVec3.Invalid && pos.DistanceTo(entrancePos) < genStepDef.minDistanceFromEntrance)
+                    return false;
+            }
+
             return true;
+        }
+
+        private IntVec3 FindCaveEntrance()
+        {
+            // Look for the cave entrance (where players spawn)
+            // In RimWorld pocket maps, the entrance is usually where the MapParent connection is
+            
+            // First, try to find a CavernExit building (the exit that leads back to surface)
+            foreach (Building building in map.listerBuildings.allBuildingsColonist)
+            {
+                if (building.def.defName == "CavernExit")
+                {
+                    return building.Position;
+                }
+            }
+            
+            // If no building found, try to find it in all things
+            foreach (Thing thing in map.listerThings.AllThings)
+            {
+                if (thing.def.defName == "CavernExit")
+                {
+                    return thing.Position;
+                }
+            }
+            
+            // Fallback: use map center if no exit found
+            return map.Center;
         }
 
         private void SpawnPOI(IntVec3 centerPos)
