@@ -1,27 +1,2 @@
-# Ignore compiled assemblies and all files in Assemblies folder
+Source/Mining-Overhaul/obj/
 Assemblies/
-Assemblies/*
-Assemblies/**/*
-
-# Ignore build artifacts
-Source/*/bin/
-Source/*/bin/**/*
-Source/*/obj/
-Source/*/obj/**/*
-bin/
-obj/
-**/bin/
-**/obj/
-*.dll
-*.pdb
-*.cache
-*.json
-
-# Ignore IDE files
-.vs/
-*.csproj.user
-*.suo
-
-# Ignore OS files
-.DS_Store
-Thumbs.db

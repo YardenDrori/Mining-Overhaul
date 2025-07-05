@@ -1,6 +1,6 @@
 is_global = true
 build_property.RootNamespace = Mining-Overhaul
-build_property.ProjectDir = /Users/yardendrori/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Mods/Mining-Overhaul/Source/Mining-Overhaul/
+build_property.ProjectDir = C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\Mining-Overhaul\Source\Mining-Overhaul\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.CsWinRTUseWindowsUIXamlProjections = false
