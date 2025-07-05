@@ -71,6 +71,10 @@ namespace MiningOverhaul
             foreach (var config in Props.spawnConfigs)
             {
                 CalculateNextSpawnTick(config);
+                if (Props.debugMode)
+                {
+                    MOLog.Message($"CompCavernCreatureSpawner: Initialized timer for {config.label}");
+                }
             }
         }
 
@@ -106,6 +110,17 @@ namespace MiningOverhaul
             var currentTick = Find.TickManager.TicksGame;
             var configsToSpawn = new List<CreatureSpawnConfig>();
             
+            // Debug timer status every 10 seconds
+            if (Props.debugMode && currentTick % 600 == 0 && nextSpawnTicks.Count > 0)
+            {
+                MOLog.Message($"CompCavernCreatureSpawner: Timer check - Current tick: {currentTick}");
+                foreach (var kvp in nextSpawnTicks)
+                {
+                    var timeLeft = (kvp.Value - currentTick) / 60000f;
+                    MOLog.Message($"  {kvp.Key.label}: Next spawn in {timeLeft:F2} days (tick {kvp.Value})");
+                }
+            }
+            
             foreach (var kvp in nextSpawnTicks.ToList())
             {
                 if (currentTick >= kvp.Value)
@@ -118,7 +133,7 @@ namespace MiningOverhaul
             {
                 if (Props.debugMode)
                 {
-                    MOLog.Message($"CompCavernCreatureSpawner: Attempting to spawn {config.label}");
+                    MOLog.Message($"CompCavernCreatureSpawner: Timer triggered for {config.label}");
                 }
                 TrySpawnCreatures(config);
                 CalculateNextSpawnTick(config);
@@ -247,16 +262,44 @@ namespace MiningOverhaul
         private void TrySpawnCreatures(CreatureSpawnConfig config)
         {
             if (CavernEntrance == null || validSpawnCells.Count == 0)
+            {
+                if (Props.debugMode)
+                {
+                    MOLog.Warning($"CompCavernCreatureSpawner: Cannot spawn {config.label} - CavernEntrance: {CavernEntrance != null}, ValidCells: {validSpawnCells.Count}");
+                }
                 return;
+            }
 
             float currentStabilityLoss = GetCurrentStabilityLossPercent();
             
+            if (Props.debugMode)
+            {
+                MOLog.Message($"CompCavernCreatureSpawner: {config.label} - Stability: {currentStabilityLoss:P1}, Range: {config.minStabilityLoss:P1}-{config.maxStabilityLoss:P1}");
+            }
+            
             // Check if config is valid for current stability
             if (currentStabilityLoss < config.minStabilityLoss || currentStabilityLoss > config.maxStabilityLoss)
+            {
+                if (Props.debugMode)
+                {
+                    MOLog.Message($"CompCavernCreatureSpawner: {config.label} skipped - stability {currentStabilityLoss:P1} outside range {config.minStabilityLoss:P1}-{config.maxStabilityLoss:P1}");
+                }
                 return;
+            }
 
             if (!Rand.Chance(config.spawnChance))
+            {
+                if (Props.debugMode)
+                {
+                    MOLog.Message($"CompCavernCreatureSpawner: {config.label} failed spawn chance ({config.spawnChance:P1})");
+                }
                 return;
+            }
+
+            if (Props.debugMode)
+            {
+                MOLog.Message($"CompCavernCreatureSpawner: {config.label} passed all checks - spawning creatures!");
+            }
 
             SpawnCreaturesFromConfig(config, currentStabilityLoss);
         }
