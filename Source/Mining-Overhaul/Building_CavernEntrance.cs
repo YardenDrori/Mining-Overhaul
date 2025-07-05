@@ -15,7 +15,7 @@ namespace MiningOverhaul
         private const int StabilityDurationTicks = 36000; // Time until collapse starts
         private const int MiningInstabilityIncrease = 1000; // Adjust this value as needed
         private const int PartialCollapseInterval = 120; // Ticks between blocking cells
-        private const int AcceleratedCollapseInterval = 30; // Much faster blocking during collapse (5 blocks every 30 ticks = 25 blocks/second)
+        private const int AcceleratedCollapseInterval = 15; // Very fast collapse (8 blocks every 15 ticks = 32 blocks/second)
         
         // Performance optimization constants
         private const int CELLS_PER_REFRESH = 25; // Process this many cells per tick during normal operation
@@ -491,100 +491,54 @@ namespace MiningOverhaul
             caveExitPosition = pocketMap.Center;
         }
 
-        // OPTIMIZED: Now incremental with cached array instead of expensive LINQ
+        // SIMPLE: Get all walkable cells that can be blocked
         private void RefreshBlockableCells()
         {
-            // Don't start over if we're already refreshing
-            if (refreshIndex == 0)
-            {
-                blockableCells.Clear();
-                blockableCellsSet.Clear();
-                hasCompletedFullRefresh = false; // Starting a new refresh cycle
-                
-                // Refresh adjacent rock cache if it's old
-                if (Find.TickManager.TicksGame > lastCacheRefresh + CACHE_REFRESH_INTERVAL)
-                {
-                    adjacentRockCache.Clear();
-                    lastCacheRefresh = Find.TickManager.TicksGame;
-                }
-            }
-
+            blockableCells.Clear();
+            blockableCellsSet.Clear();
+            
             if (!base.PocketMapExists || pocketMap == null) 
             {
-                refreshIndex = 0;
-                hasCompletedFullRefresh = true; // No map = nothing to refresh
+                hasCompletedFullRefresh = true;
                 return;
             }
 
-            // Initialize cells array if needed
-            if (allCellsArray == null)
+            // Cache exit position if needed
+            if (!caveExitPosition.IsValid)
             {
-                InitializeCellsArray();
+                CacheExitPosition();
             }
 
-            // Use different refresh rates based on collapse state
-            int refreshRate = isCollapsing ? COLLAPSE_CELLS_PER_REFRESH : CELLS_PER_REFRESH;
-            int endIndex = Mathf.Min(refreshIndex + refreshRate, allCellsCount);
-
-            // Process a chunk of cells this tick using cached array (O(1) access)
-            for (int i = refreshIndex; i < endIndex; i++)
+            // Simple: any walkable cell can be blocked
+            foreach (IntVec3 cell in pocketMap.AllCells)
             {
-                IntVec3 cell = allCellsArray[i];
-                if (IsValidBlockableCell(cell))
+                if (IsSimpleBlockableCell(cell))
                 {
                     blockableCells.Add(cell);
                     blockableCellsSet.Add(cell);
                 }
             }
-
-            refreshIndex = endIndex;
             
-            // Mark refresh as complete when we've processed all cells
-            if (refreshIndex >= allCellsCount)
-            {
-                refreshIndex = 0;
-                hasCompletedFullRefresh = true; // We've checked every cell
-            }
+            hasCompletedFullRefresh = true;
         }
 
-        // OPTIMIZED: Early exits, caching, and faster operations
-        private bool IsValidBlockableCell(IntVec3 cell)
+        // SIMPLE: Basic check for blockable cells
+        private bool IsSimpleBlockableCell(IntVec3 cell)
         {
-            // Early exit checks first (cheapest operations)
-            if (!cell.InBounds(pocketMap)) return false;
-            if (!cell.Walkable(pocketMap)) return false;
-            
-            // Check edifice (still cheap)
-            if (cell.GetEdifice(pocketMap) != null) return false;
-            
-            // Check for blocking things - optimized loop
-            if (HasImpassableThings(cell)) return false;
-            
-            // During collapse, avoid exit area but allow any other walkable cell
-            if (isCollapsing)
-            {
-                // Only avoid the immediate exit area during final collapse
-                if (caveExitPosition.IsValid && cell.DistanceToSquared(caveExitPosition) < 4) // 2*2 around exit
-                    return false;
-                    
-                // Any other walkable cell is fair game during collapse
-                return true;
-            }
-            
-            // During partial collapse, use normal avoidance logic
-            if (useCenterAvoidance)
-            {
-                if (cell.DistanceToSquared(pocketMap.Center) < centerAvoidanceRange * centerAvoidanceRange) 
-                    return false;
-            }
-            else
-            {
-                if (caveExitPosition.IsValid && cell.DistanceToSquared(caveExitPosition) < 9) // 3*3
-                    return false;
-            }
-            
-            // Most expensive check last - use caching (only during partial collapse)
-            return HasAdjacentRock(cell);
+            // Basic checks
+            if (!cell.InBounds(pocketMap) || !cell.Walkable(pocketMap) || cell.Fogged(pocketMap))
+                return false;
+                
+            // Don't block cells with pawns
+            var thingList = cell.GetThingList(pocketMap);
+            if (thingList.Any(t => t.def.category == ThingCategory.Pawn))
+                return false;
+                
+            // Avoid exit area (keep path clear)
+            if (caveExitPosition.IsValid && cell.DistanceTo(caveExitPosition) < 3)
+                return false;
+                
+            return true;
         }
 
         // NEW: Cached method for expensive adjacent rock check
@@ -614,172 +568,54 @@ namespace MiningOverhaul
             return hasRock;
         }
 
-        // OPTIMIZED: Now incremental validation with batch removal to avoid list shifting
-        private void ValidateBlockableCells()
-        {
-            if (!base.PocketMapExists || pocketMap == null)
-            {
-                blockableCells.Clear();
-                blockableCellsSet.Clear();
-                validationIndex = 0;
-                return;
-            }
-            
-            if (blockableCells.Count == 0)
-            {
-                validationIndex = 0;
-                return;
-            }
-            
-            // Use different validation rates based on collapse state
-            int validationRate = isCollapsing ? COLLAPSE_CELLS_PER_VALIDATION : CELLS_PER_VALIDATION;
-            int cellsToValidate = Mathf.Min(validationRate, blockableCells.Count - validationIndex);
-            var cellsToRemove = new List<IntVec3>();
-            
-            // Check validity without removing items yet
-            for (int i = 0; i < cellsToValidate; i++)
-            {
-                int currentIndex = validationIndex + i;
-                if (currentIndex >= blockableCells.Count) break;
-                
-                IntVec3 cell = blockableCells[currentIndex];
-                if (!IsValidBlockableCell(cell))
-                {
-                    cellsToRemove.Add(cell);
-                }
-            }
-            
-            // Batch remove invalid cells to avoid list shifting overhead
-            foreach (var cell in cellsToRemove)
-            {
-                blockableCells.Remove(cell);
-                blockableCellsSet.Remove(cell);
-            }
-            
-            validationIndex += cellsToValidate;
-            
-            // Reset validation index when we've checked all cells
-            if (validationIndex >= blockableCells.Count)
-            {
-                validationIndex = 0;
-            }
-        }
 
-        // FIXED: Ensures collapse works properly while maintaining performance
+        // SIMPLE: Block cave cells without overcomplicated logic
         private void TryBlockCaveCells()
         {
-            // Early exit if no pocket map exists
             if (!base.PocketMapExists || pocketMap == null)
-            {
                 return;
+            
+            // Refresh cells if needed
+            if (blockableCells.Count < 50 || Find.TickManager.TicksGame % 300 == 0) // Every 5 seconds
+            {
+                RefreshBlockableCells();
             }
             
-            // Spread expensive operations, but ensure collapse always works
-            int currentTick = Find.TickManager.TicksGame;
-            
-            // During collapse phase, always do validation to ensure progress
+            // Check if cave is mostly filled - trigger final collapse
             if (isCollapsing)
             {
-                ValidateBlockableCells();
-            }
-            else if (currentTick % 3 == 0) // Normal phase: reduce validation frequency
-            {
-                ValidateBlockableCells();
-            }
-            
-            // Aggressive refresh during collapse, reduced during normal operation
-            bool needsRefresh = (blockableCells.Count < 10 && refreshIndex == 0) || refreshIndex > 0;
-            if (isCollapsing && needsRefresh)
-            {
-                RefreshBlockableCells(); // Always refresh during collapse
-            }
-            else if (currentTick % 5 == 0 && needsRefresh)
-            {
-                RefreshBlockableCells(); // Reduced frequency during normal operation
-            }
-            
-            // Check for final collapse - more frequently during collapse phase
-            int collapseCheckInterval = isCollapsing ? 3 : 10;
-            if (currentTick % collapseCheckInterval == 0)
-            {
-                // During collapse: trigger final destruction when cave is mostly filled
-                if (isCollapsing)
+                int walkableCells = pocketMap.AllCells.Count(c => c.Walkable(pocketMap));
+                int totalCells = pocketMap.AllCells.Count();
+                float percentFilled = 1f - ((float)walkableCells / totalCells);
+                
+                if (percentFilled > 0.8f) // 80% filled
                 {
-                    // Count remaining walkable cells
-                    int totalWalkableCells = 0;
-                    int walkableCellsNearExit = 0;
-                    
-                    if (allCellsArray != null)
-                    {
-                        for (int i = 0; i < allCellsCount; i++)
-                        {
-                            IntVec3 cell = allCellsArray[i];
-                            if (cell.Walkable(pocketMap))
-                            {
-                                totalWalkableCells++;
-                                
-                                // Count cells near exit (keep some open for escape)
-                                if (caveExitPosition.IsValid && cell.DistanceToSquared(caveExitPosition) < 16) // 4x4 around exit
-                                {
-                                    walkableCellsNearExit++;
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Trigger final collapse when less than 20% of cave remains walkable
-                    // OR when we can't find blockable cells despite having walkable space
-                    if (totalWalkableCells < (allCellsCount * 0.2f) || 
-                        (blockableCells.Count == 0 && hasCompletedFullRefresh && totalWalkableCells > walkableCellsNearExit))
-                    {
-                        MOLog.Message($"Cave collapse complete - {totalWalkableCells}/{allCellsCount} cells remaining, triggering final destruction");
-                        Collapse();
-                        return;
-                    }
-                }
-                else
-                {
-                    // During partial collapse: only check if we've run out of valid cells
-                    if (blockableCells.Count == 0 && hasCompletedFullRefresh)
-                    {
-                        // If not collapsing yet, just wait - we might find more cells as things change
-                    }
+                    MOLog.Message($"Cave {percentFilled:P0} filled - triggering final destruction");
+                    Collapse();
+                    return;
                 }
             }
 
-            // Block multiple cells during collapse for speed and realism
-            int blocksToPlace = isCollapsing ? 5 : 1; // 5x faster during collapse
+            // Block cells based on collapse state
+            int blocksToPlace = isCollapsing ? 8 : 1; // Much faster during collapse
             
             for (int i = 0; i < blocksToPlace && blockableCells.Count > 0; i++)
             {
-                IntVec3 cellToBlock = ChooseStrategicCellToBlock();
-
-                if (cellToBlock != IntVec3.Invalid)
+                IntVec3 cellToBlock = blockableCells.RandomElement();
+                
+                if (cellToBlock.IsValid)
                 {
-                    // Spawn blocking rock
+                    // Place rock
                     GenSpawn.Spawn(ThingDef.Named("MO_WeakRock"), cellToBlock, pocketMap);
-                    
-                    // Remove from both data structures for O(1) performance
                     blockableCells.Remove(cellToBlock);
-                    blockableCellsSet.Remove(cellToBlock);
                     
-                    // Always invalidate cache during collapse to ensure proper cell discovery
-                    if (isCollapsing || currentTick % 3 == 0)
-                    {
-                        InvalidateCacheAround(cellToBlock);
-                    }
-                    
-                    // Reset the refresh completion flag since placing a rock might create new blockable cells
-                    hasCompletedFullRefresh = false;
-
-                    // Visual effects (only when viewing cavern and spread out for performance)
-                    if (Find.CurrentMap == pocketMap && (i == 0 || currentTick % 3 == 0))
+                    // Visual effects
+                    if (Find.CurrentMap == pocketMap && i == 0)
                     {
                         EffecterDefOf.ImpactSmallDustCloud.Spawn(cellToBlock, pocketMap).Cleanup();
-
-                        if (isCollapsing && i == 0) // Only shake once per tick
+                        if (isCollapsing)
                         {
-                            Find.CameraDriver.shaker.DoShake(0.08f);
+                            Find.CameraDriver.shaker.DoShake(0.1f);
                         }
                     }
                 }
@@ -797,57 +633,6 @@ namespace MiningOverhaul
             }
         }
 
-        private IntVec3 ChooseStrategicCellToBlock()
-        {
-            if (blockableCells.Count == 0) return IntVec3.Invalid;
-
-            // NEW: Realistic collapse - multiple blocks per call for speed
-            if (isCollapsing)
-            {
-                // During full collapse: block multiple cells at once for speed
-                return ChooseRealisticCollapseCell();
-            }
-            else
-            {
-                // During partial collapse: random debris falls
-                return ChooseRandomDebrisCell();
-            }
-        }
-        
-        private IntVec3 ChooseRealisticCollapseCell()
-        {
-            if (!base.PocketMapExists || pocketMap == null) 
-                return blockableCells.RandomElement();
-            
-            // Prioritize open areas (ceiling collapse) over wall-adjacent cells
-            var openAreaCells = blockableCells.Where(cell => 
-            {
-                // Count adjacent blocked cells - fewer = more open area
-                int blockedNeighbors = 0;
-                foreach (IntVec3 neighbor in GenAdj.AdjacentCells)
-                {
-                    IntVec3 adjCell = cell + neighbor;
-                    if (!adjCell.InBounds(pocketMap) || !adjCell.Walkable(pocketMap))
-                        blockedNeighbors++;
-                }
-                // Prefer cells with fewer blocked neighbors (open areas)
-                return blockedNeighbors <= 3; // 3 or fewer blocked sides = relatively open
-            }).ToList();
-            
-            if (openAreaCells.Count > 0)
-            {
-                return openAreaCells.RandomElement();
-            }
-            
-            // Fallback to any available cell
-            return blockableCells.RandomElement();
-        }
-        
-        private IntVec3 ChooseRandomDebrisCell()
-        {
-            // Simple random selection for partial collapse debris
-            return blockableCells.RandomElement();
-        }
         #endregion
 
         #region Full Collapse System
