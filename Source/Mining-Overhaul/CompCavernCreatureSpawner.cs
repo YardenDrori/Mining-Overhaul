@@ -499,30 +499,34 @@ namespace MiningOverhaul
             if (spawnedPawns.Count == 0)
                 return;
 
-            string message;
-            if (spawnedPawns.Count == 1)
+            // Only send notification if verbose logging is enabled
+            if (MiningOverhaulMod.settings?.verboseLogging == true)
             {
-                message = $"A {spawnedPawns[0].def.label} has emerged from the depths of the cavern.";
-            }
-            else
-            {
-                // Check if all creatures are the same type
-                var creatureTypes = spawnedPawns.Select(p => p.def.label).Distinct().ToList();
-                if (creatureTypes.Count == 1)
+                string message;
+                if (spawnedPawns.Count == 1)
                 {
-                    // All same type
-                    message = $"{spawnedPawns.Count} {creatureTypes[0]}s have emerged from the depths of the cavern.";
+                    message = $"A {spawnedPawns[0].def.label} has emerged from the depths of the cavern.";
                 }
                 else
                 {
-                    // Mixed types - use config label or generic message
-                    message = spawnedPawns.Count <= 3 
-                        ? $"{string.Join(", ", spawnedPawns.Select(p => p.def.label))} have emerged from the depths of the cavern."
-                        : $"{spawnedPawns.Count} creatures from {config.label} have emerged from the depths of the cavern.";
+                    // Check if all creatures are the same type
+                    var creatureTypes = spawnedPawns.Select(p => p.def.label).Distinct().ToList();
+                    if (creatureTypes.Count == 1)
+                    {
+                        // All same type
+                        message = $"{spawnedPawns.Count} {creatureTypes[0]}s have emerged from the depths of the cavern.";
+                    }
+                    else
+                    {
+                        // Mixed types - use config label or generic message
+                        message = spawnedPawns.Count <= 3 
+                            ? $"{string.Join(", ", spawnedPawns.Select(p => p.def.label))} have emerged from the depths of the cavern."
+                            : $"{spawnedPawns.Count} creatures from {config.label} have emerged from the depths of the cavern.";
+                    }
                 }
-            }
 
-            Messages.Message(message, new LookTargets(spawnedPawns), MessageTypeDefOf.NeutralEvent);
+                Messages.Message(message, new LookTargets(spawnedPawns), MessageTypeDefOf.NeutralEvent);
+            }
         }
 
         private void CalculateNextSpawnTick(CreatureSpawnConfig config)
@@ -564,7 +568,7 @@ namespace MiningOverhaul
             
             if (Props.debugMode)
             {
-                MOLog.Message($"CompCavernCreatureSpawner: {config.label} - Stability: {currentStabilityLoss:P1}, Multiplier: {frequencyMultiplier:F2}x, Next spawn in {scaledIntervalHours:F1} hours");
+                MOLog.Message($"CompCavernCreatureSpawner: {config.label} - Next spawn in {scaledIntervalHours:F1} hours");
             }
         }
 
