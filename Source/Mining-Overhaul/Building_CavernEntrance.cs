@@ -15,7 +15,7 @@ namespace MiningOverhaul
         private const int StabilityDurationTicks = 36000; // Time until collapse starts
         private const int MiningInstabilityIncrease = 1000; // Adjust this value as needed
         private const int PartialCollapseInterval = 120; // Ticks between blocking cells
-        private const int AcceleratedCollapseInterval = 60; // Faster blocking during collapse (was 15 - too aggressive)
+        private const int AcceleratedCollapseInterval = 30; // Much faster blocking during collapse (5 blocks every 30 ticks = 25 blocks/second)
         
         // Performance optimization constants
         private const int CELLS_PER_REFRESH = 25; // Process this many cells per tick during normal operation
@@ -704,35 +704,40 @@ namespace MiningOverhaul
                 }
             }
 
-            // Always try to block a cell (this is the main purpose)
-            IntVec3 cellToBlock = ChooseStrategicCellToBlock();
-
-            if (cellToBlock != IntVec3.Invalid)
+            // Block multiple cells during collapse for speed and realism
+            int blocksToPlace = isCollapsing ? 5 : 1; // 5x faster during collapse
+            
+            for (int i = 0; i < blocksToPlace && blockableCells.Count > 0; i++)
             {
-                // Spawn blocking rock
-                GenSpawn.Spawn(ThingDef.Named("MO_WeakRock"), cellToBlock, pocketMap);
-                
-                // Remove from both data structures for O(1) performance
-                blockableCells.Remove(cellToBlock);
-                blockableCellsSet.Remove(cellToBlock);
-                
-                // Always invalidate cache during collapse to ensure proper cell discovery
-                if (isCollapsing || currentTick % 3 == 0)
-                {
-                    InvalidateCacheAround(cellToBlock);
-                }
-                
-                // Reset the refresh completion flag since placing a rock might create new blockable cells
-                hasCompletedFullRefresh = false;
+                IntVec3 cellToBlock = ChooseStrategicCellToBlock();
 
-                // Visual effects (only when viewing cavern and not too frequently)
-                if (Find.CurrentMap == pocketMap && currentTick % 2 == 0)
+                if (cellToBlock != IntVec3.Invalid)
                 {
-                    EffecterDefOf.ImpactSmallDustCloud.Spawn(cellToBlock, pocketMap).Cleanup();
-
-                    if (isCollapsing)
+                    // Spawn blocking rock
+                    GenSpawn.Spawn(ThingDef.Named("MO_WeakRock"), cellToBlock, pocketMap);
+                    
+                    // Remove from both data structures for O(1) performance
+                    blockableCells.Remove(cellToBlock);
+                    blockableCellsSet.Remove(cellToBlock);
+                    
+                    // Always invalidate cache during collapse to ensure proper cell discovery
+                    if (isCollapsing || currentTick % 3 == 0)
                     {
-                        Find.CameraDriver.shaker.DoShake(0.06f);
+                        InvalidateCacheAround(cellToBlock);
+                    }
+                    
+                    // Reset the refresh completion flag since placing a rock might create new blockable cells
+                    hasCompletedFullRefresh = false;
+
+                    // Visual effects (only when viewing cavern and spread out for performance)
+                    if (Find.CurrentMap == pocketMap && (i == 0 || currentTick % 3 == 0))
+                    {
+                        EffecterDefOf.ImpactSmallDustCloud.Spawn(cellToBlock, pocketMap).Cleanup();
+
+                        if (isCollapsing && i == 0) // Only shake once per tick
+                        {
+                            Find.CameraDriver.shaker.DoShake(0.08f);
+                        }
                     }
                 }
             }
@@ -753,53 +758,51 @@ namespace MiningOverhaul
         {
             if (blockableCells.Count == 0) return IntVec3.Invalid;
 
-            // Strategic collapse patterns based on collapse state
+            // NEW: Realistic collapse - multiple blocks per call for speed
             if (isCollapsing)
             {
-                // During full collapse: prioritize cells near center for realistic cave-in
-                return ChooseCenterWeightedCell();
+                // During full collapse: block multiple cells at once for speed
+                return ChooseRealisticCollapseCell();
             }
             else
             {
-                // During partial collapse: random pattern with some edge preference
-                return ChooseEdgeWeightedCell();
+                // During partial collapse: random debris falls
+                return ChooseRandomDebrisCell();
             }
         }
         
-        private IntVec3 ChooseCenterWeightedCell()
+        private IntVec3 ChooseRealisticCollapseCell()
         {
             if (!base.PocketMapExists || pocketMap == null) 
                 return blockableCells.RandomElement();
-                
-            var mapCenter = pocketMap.Center;
             
-            // Find cells closest to center (cave-in effect)
-            var centerCells = blockableCells
-                .OrderBy(cell => cell.DistanceToSquared(mapCenter))
-                .Take(Mathf.Min(20, blockableCells.Count))
-                .ToList();
-                
-            return centerCells.Count > 0 ? centerCells.RandomElement() : blockableCells.RandomElement();
-        }
-        
-        private IntVec3 ChooseEdgeWeightedCell()
-        {
-            if (!base.PocketMapExists || pocketMap == null) 
-                return blockableCells.RandomElement();
-                
-            var mapCenter = pocketMap.Center;
-            
-            // 70% chance for edge cells (realistic partial collapse), 30% random
-            if (Rand.Chance(0.7f))
+            // Prioritize open areas (ceiling collapse) over wall-adjacent cells
+            var openAreaCells = blockableCells.Where(cell => 
             {
-                var edgeCells = blockableCells
-                    .OrderByDescending(cell => cell.DistanceToSquared(mapCenter))
-                    .Take(Mathf.Min(15, blockableCells.Count))
-                    .ToList();
-                    
-                return edgeCells.Count > 0 ? edgeCells.RandomElement() : blockableCells.RandomElement();
+                // Count adjacent blocked cells - fewer = more open area
+                int blockedNeighbors = 0;
+                foreach (IntVec3 neighbor in GenAdj.AdjacentCells)
+                {
+                    IntVec3 adjCell = cell + neighbor;
+                    if (!adjCell.InBounds(pocketMap) || !adjCell.Walkable(pocketMap))
+                        blockedNeighbors++;
+                }
+                // Prefer cells with fewer blocked neighbors (open areas)
+                return blockedNeighbors <= 3; // 3 or fewer blocked sides = relatively open
+            }).ToList();
+            
+            if (openAreaCells.Count > 0)
+            {
+                return openAreaCells.RandomElement();
             }
             
+            // Fallback to any available cell
+            return blockableCells.RandomElement();
+        }
+        
+        private IntVec3 ChooseRandomDebrisCell()
+        {
+            // Simple random selection for partial collapse debris
             return blockableCells.RandomElement();
         }
         #endregion
