@@ -57,6 +57,10 @@ namespace MiningOverhaul
             if (!respawningAfterLoad)
             {
                 InitializeSpawnTicks();
+                if (Props.debugMode)
+                {
+                    MOLog.Message($"CompCavernCreatureSpawner: Component spawned, {Props.spawnConfigs.Count} configs loaded");
+                }
             }
         }
 
@@ -73,8 +77,23 @@ namespace MiningOverhaul
         {
             base.CompTick();
 
-            if (CavernEntrance == null || !CavernEntrance.PocketMapExists)
+            if (CavernEntrance == null)
+            {
+                if (Props.debugMode && Find.TickManager.TicksGame % 600 == 0) // Every 10 seconds
+                {
+                    MOLog.Warning("CompCavernCreatureSpawner: CavernEntrance is null");
+                }
                 return;
+            }
+
+            if (!CavernEntrance.PocketMapExists)
+            {
+                if (Props.debugMode && Find.TickManager.TicksGame % 600 == 0) // Every 10 seconds
+                {
+                    MOLog.Message("CompCavernCreatureSpawner: No pocket map exists yet");
+                }
+                return;
+            }
 
             // Update valid spawn cells periodically
             if (ShouldUpdateValidCells())
@@ -96,6 +115,10 @@ namespace MiningOverhaul
 
             foreach (var config in configsToSpawn)
             {
+                if (Props.debugMode)
+                {
+                    MOLog.Message($"CompCavernCreatureSpawner: Attempting to spawn {config.label}");
+                }
                 TrySpawnCreatures(config);
                 CalculateNextSpawnTick(config);
             }
@@ -457,6 +480,11 @@ namespace MiningOverhaul
             int intervalTicks = Mathf.RoundToInt(scaledInterval * 60000f);
             
             nextSpawnTicks[config] = Find.TickManager.TicksGame + intervalTicks;
+            
+            if (Props.debugMode)
+            {
+                MOLog.Message($"CompCavernCreatureSpawner: {config.label} - Stability: {currentStabilityLoss:P1}, Next spawn in {scaledInterval:F1} days ({intervalTicks} ticks)");
+            }
         }
 
         public override void PostExposeData()

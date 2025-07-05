@@ -67,7 +67,7 @@
             <exitAvoidanceRadius>6</exitAvoidanceRadius>
             <centerAvoidanceRadius>4</centerAvoidanceRadius>
             <useExitAvoidance>true</useExitAvoidance>
-            <debugMode>false</debugMode>
+            <debugMode>true</debugMode>
             <spawnConfigs>
                 <!-- Early stability loss (0-25%) - Harmless creatures -->
                 <li>
