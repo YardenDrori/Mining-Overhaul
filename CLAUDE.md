@@ -2,154 +2,111 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Overview
+
+This is a RimWorld mod called "Mining Overhaul" that implements a dynamic cave system with temporal stability mechanics. The mod adds deep mining, cavern exploration, and creature spawning systems to RimWorld.
+
 ## Development Commands
 
-### Building the Mod
-- Build the C# project: `dotnet build Source/Mining-Overhaul/Mining-Overhaul.sln`
-- The compiled assemblies are output to `Assemblies/` directory
-- Uses .NET Framework 4.7.2 with RimWorld 1.6 references
+### Building the Project
+```bash
+# Build the C# project
+dotnet build Source/Mining-Overhaul/Mining-Overhaul.csproj
 
-### Dependencies
-- **Harmony** (brrainz.harmony) - Required for patching RimWorld code
-- **Krafs.Rimworld.Ref** (1.6.4491-beta) - RimWorld reference assemblies
-- **Lib.Harmony** (2.3.6) - Harmony library for runtime patching
+# The compiled DLL will be placed in Assemblies/Mining-Overhaul.dll
+```
+
+### Testing
+- No automated tests - testing is done in-game using RimWorld's development mode
+- Enable debug mode in ModSettings.cs for verbose logging
+- Use RimWorld's dev tools for testing cave generation and stability mechanics
 
 ## Architecture Overview
 
-### Core Components
+### Core Systems
+1. **Cave Entrance System** (`Building_CavernEntrance.cs`) - Central hub managing cave stability and lifecycle
+2. **Creature Spawning System** (`CompCavernCreatureSpawner.cs`) - Stability-based creature spawning with configurable scaling
+3. **Stabilization System** (`CompCavernStabilizer.cs`) - Prevents cave collapse when active
+4. **Cave Generation** (`GenStep_CaveShape.cs`) - Multiple algorithms for cave layout generation
+5. **Access Points** (`Building_CavernAccessPoint.cs`) - Temporary structures for cave entry
 
-**CavernEntrance** (`Building_CavernEntrance.cs`):
-- Main portal system managing cave stability and collapse mechanics
-- Inherits from `MapPortal` to create pocket maps (underground caves)
-- Features complex stability system with visual effects, partial collapse, and full collapse
-- Optimized incremental processing for performance (processes cells in chunks)
-- Configurable collapse avoidance (center vs exit-based)
-- Building detection system for powered structures on surface
+### Key Architecture Patterns
+- **Component-Based Design**: Uses RimWorld's `ThingComp` system for modular functionality
+- **Temporal State Management**: Complex state tracking with incremental processing
+- **Performance Optimization**: Caching, incremental processing, and batch operations
+- **Configuration-Driven**: Extensive XML configuration for customization
 
-**Generation System** (`GenSteps/` directory):
-- `GenStep_CaveShape.cs` - Generates cave layouts
-- `GenStep_CenterHole.cs` - Creates central cave features
-- `GenStep_DeepSteelVeins.cs` - Places deep resource veins
-- `GenStep_FloorReplacement.cs` - Replaces cave floors
-- `GenStep_POI_Generation.cs` - Places points of interest
-- `GenStep_PlaceCavernExit.cs` - Places cave exits
+### Data Flow
+Cave Creation → Entrance Spawning → Component Attachment → Stability Degradation → Creature Spawning → Collapse Prevention → Final Collapse
 
-**Components**:
-- `CompCavernScanner.cs` - Scanning functionality for finding caves
-- `CompCavernStabilizer.cs` - Stabilization system for caves
-- `BuildingCavernSpawner.cs` - Spawns cave entrances
-- `Building_CavernAccessPoint.cs` - Access point structures
-- `Building_CaveBomb.cs` - Explosive devices for cave creation
+## Important Files
 
-### Key Systems
+### Core Classes
+- `ModCore.cs` - Main mod entry point with Harmony patches
+- `Building_CavernEntrance.cs` - Primary cave management system
+- `CompCavernCreatureSpawner.cs` - Creature spawning logic
+- `CompCavernStabilizer.cs` - Cave stabilization mechanics
+- `ModSettings.cs` - User configuration and logging
 
-**Stability System**:
-- Time-based degradation (36000 ticks = 1 RimWorld day)
-- Colonist presence accelerates instability (25% per colonist)
-- Mining operations add instability bursts
-- Four visual effect stages based on stability percentage
-- Partial collapse starts at 50% stability, full collapse at 100%
+### Generation Steps
+- `GenStep_CaveShape.cs` - Cave generation algorithms
+- `GenStep_POI_Generation.cs` - Point of interest placement
+- `GenStep_DeepSteelVeins.cs` - Resource vein generation
 
-**Collapse Mechanics**:
-- Incremental cell blocking system for performance
-- Strategic cell selection (adjacent to rock walls)
-- Avoidance zones around exits or map center
-- Cached adjacency checks for optimization
-- Accelerated collapse during final phase
+### Patches
+- `MiningInstabilityPatch.cs` - Harmony patches for mining mechanics
 
-**Cave Types** (planned, see `todo` file):
-- Level 1: Steel slag access (Rocky, Flooded)
-- Level 2: Steel + silver (Vegetation, Frozen)
-- Level 3: Steel + silver + uranium + jade (Infested, Fungal)
-- Level 4: All resources (Magma, Radioactive, Bunker)
-- Level 5: Oxygen-deprived levels (future Odyssey content)
+## Configuration Files
 
-### XML Structure
+### XML Definitions
+- `1.6/Defs/` - All game definitions (buildings, items, biomes, etc.)
+- `1.6/Defs/GenStepDefs/` - Cave generation parameters
+- `About/About.xml` - Mod metadata
 
-**Defs Organization**:
-- `1.6/Defs/` - All game definitions for RimWorld 1.6
-- `CaveEntrances.xml` - Portal definitions with inheritance
-- `CavernGeneration.xml` - Cave generation parameters
-- `DeepResources.xml` - Underground resource definitions
-- `GenStepDefs/` - World generation step definitions
+### Key Configuration Concepts
+- **Stability Loss**: Percentage-based system (0.0 = stable, 1.0 = fully unstable)
+- **Scaling Factor**: How much instability affects spawn rates and counts
+- **Baseline at 50%**: All spawn configurations use 50% instability as baseline
 
-**Localization**:
-- `Languages/English/Keyed/Keys.xml` - Translation keys
+## Performance Considerations
 
-### Performance Optimizations
+### Optimization Patterns Used
+- **Incremental Processing**: Spreads expensive operations across multiple game ticks
+- **Caching**: Expensive lookups cached (adjacent rocks, exit positions)
+- **Batch Operations**: Processes multiple cells/entities together
+- **Array Access**: Uses O(1) cell access patterns
 
-**Incremental Processing**:
-- `CELLS_PER_REFRESH = 50` - Cells processed per tick for blockable cell discovery
-- `CELLS_PER_VALIDATION = 20` - Cells validated per tick
-- `CACHE_REFRESH_INTERVAL = 300` - Cache refresh every 5 seconds
-- `THING_CHECK_INTERVAL = 300` - Building detection every 5 seconds
-
-**Caching Systems**:
-- Adjacent rock cache for expensive terrain checks
-- Blockable cells set for O(1) lookups
-- Incremental validation instead of full list processing
+### Memory Management
+- Cache invalidation on map changes
+- Null checking and bounds validation
+- Graceful degradation when pocket maps don't exist
 
 ## Development Notes
 
-### Mod ID and Namespace
-- Package ID: `blacksparrow.miningoverhaul`
-- Namespace: `MiningOverhaul`
-- Harmony ID: `blacksparrow.MiningOverhaul`
+### Logging
+- Use `MOLog.Message()` for consistent logging format
+- Enable debug mode in settings for verbose output
+- Conditional logging to avoid performance impact
 
-### Important Constants
-- `StabilityDurationTicks = 36000` (1 day)
-- `MiningInstabilityIncrease = 1000` (per mining operation)
-- `PartialCollapseInterval = 120` (2 seconds)
-- `AcceleratedCollapseInterval = 15` (0.25 seconds)
+### Testing Approach
+- Use RimWorld's development mode for testing
+- Enable debug gizmos for cave entrances
+- Test with different stability levels and creature configurations
 
-### DefOf Pattern
-- `CavingDefOf.cs` contains static references to ThingDefs
-- Used for type-safe access to mod definitions
-- Populated automatically by RimWorld's reflection system
+### Common Patterns
+- Always check for null pocket maps before operations
+- Use incremental processing for expensive operations
+- Follow RimWorld's save/load patterns for persistence
+- Implement proper cleanup in destroy methods
 
-### POI (Point of Interest) System
-**Architecture** (`GenStep_POI_Generation.cs`):
-- **POIGenStepDef**: Controls where and how often POIs spawn
-- **POIContentDef**: Defines what spawns in each POI using spawn groups
-- **POISpawnGroup**: Groups of related items/creatures that spawn together
-- **SpawnPattern**: Controls spatial arrangement (Clustered, Scattered, Ring, Line)
+## Dependencies
+- **RimWorld 1.6** (Krafs.Rimworld.Ref package)
+- **Harmony 2.3.6** for runtime patching
+- **Brrainz.Harmony** mod dependency
 
-**Key Features**:
-- **Grouped Spawning**: Related items spawn together (e.g., insect hive + glowpods + defenders)
-- **Spawn Patterns**: Different spatial arrangements for variety
-- **Conditional Spawning**: Groups have spawn chances for randomness
-- **Legacy Support**: Automatically converts old format definitions
-
-**Example Usage**:
-```xml
-<!-- Insect hive with glowpods and defenders -->
-<spawnGroups>
-    <li>
-        <label>Hive Core</label>
-        <spawnChance>1.0</spawnChance>
-        <pattern>Clustered</pattern>
-        <groupRadius>1</groupRadius>
-        <spawnOptions>
-            <li><thingDef>Hive</thingDef><thingCount>1~2</thingCount></li>
-        </spawnOptions>
-    </li>
-    <li>
-        <label>Glowpods</label>
-        <spawnChance>0.8</spawnChance>
-        <pattern>Ring</pattern>
-        <groupRadius>4</groupRadius>
-        <spawnOptions>
-            <li><thingDef>Plant_GlowPod</thingDef><thingCount>3~8</thingCount></li>
-        </spawnOptions>
-    </li>
-</spawnGroups>
-```
-
-### PlaceWorkers
-- `PlaceWorker_CavernAccessPoint.cs` - Placement validation for access points
-- `PlaceWorker_OnlyInCavern.cs` - Restricts placement to cave environments
-
-### Debugging
-- Extensive dev gizmos for stability testing
-- Debug info shows colonist count, stability percentage, and system states
-- Warning and error logging for development feedback
+## File Structure Notes
+- C# source in `Source/Mining-Overhaul/`
+- Compiled assemblies in `Assemblies/`
+- Game definitions in `1.6/Defs/`
+- Localization in `Languages/English/`
+- The `todo` file contains development roadmap and known issues
