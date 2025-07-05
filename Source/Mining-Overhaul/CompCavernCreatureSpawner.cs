@@ -55,14 +55,11 @@ namespace MiningOverhaul
         public override void PostSpawnSetup(bool respawningAfterLoad)
         {
             base.PostSpawnSetup(respawningAfterLoad);
-            if (!respawningAfterLoad)
+            if (Props.debugMode)
             {
-                InitializeSpawnTicks();
-                if (Props.debugMode)
-                {
-                    MOLog.Message($"CompCavernCreatureSpawner: Component spawned, {Props.spawnConfigs.Count} configs loaded");
-                }
+                MOLog.Message($"CompCavernCreatureSpawner: Component spawned, {Props.spawnConfigs.Count} configs loaded - waiting for pocket map");
             }
+            // Don't initialize timers until pocket map exists
         }
 
         private void InitializeSpawnTicks()
@@ -98,6 +95,16 @@ namespace MiningOverhaul
                     MOLog.Message("CompCavernCreatureSpawner: No pocket map exists yet");
                 }
                 return;
+            }
+
+            // Initialize timers when pocket map first becomes available
+            if (nextSpawnTicks.Count == 0)
+            {
+                InitializeSpawnTicks();
+                if (Props.debugMode)
+                {
+                    MOLog.Message("CompCavernCreatureSpawner: Pocket map detected - initializing timers");
+                }
             }
 
             // Update valid spawn cells periodically
@@ -522,6 +529,20 @@ namespace MiningOverhaul
         {
             float currentStabilityLoss = GetCurrentStabilityLossPercent();
             
+            // If stability is 0, use base frequency as-is (no scaling)
+            if (currentStabilityLoss <= 0.01f)
+            {
+                float baseInterval = config.baseSpawnFrequencyDays;
+                int baseTicks = Mathf.RoundToInt(baseInterval * 60000f);
+                nextSpawnTicks[config] = Find.TickManager.TicksGame + baseTicks;
+                
+                if (Props.debugMode)
+                {
+                    MOLog.Message($"CompCavernCreatureSpawner: {config.label} - Zero stability, using base interval: {baseInterval:F1} days");
+                }
+                return;
+            }
+            
             // Calculate effective stability for scaling: apply scaling factor and normalize to 50% baseline
             float effectiveStability = currentStabilityLoss * config.instabilityScalingFactor;
             
@@ -530,8 +551,11 @@ namespace MiningOverhaul
             // Lower instability = less frequent spawning (longer intervals)
             float frequencyMultiplier = effectiveStability / 0.5f;
             
+            // Ensure reasonable bounds: 0.1x to 5x frequency
+            frequencyMultiplier = Mathf.Clamp(frequencyMultiplier, 0.1f, 5f);
+            
             // Calculate scaled interval: higher frequency multiplier = shorter interval
-            float scaledInterval = frequencyMultiplier > 0 ? config.baseSpawnFrequencyDays / frequencyMultiplier : config.baseSpawnFrequencyDays * 10f;
+            float scaledInterval = config.baseSpawnFrequencyDays / frequencyMultiplier;
             
             // Convert to ticks (1 day = 60000 ticks)
             int intervalTicks = Mathf.RoundToInt(scaledInterval * 60000f);
@@ -540,7 +564,7 @@ namespace MiningOverhaul
             
             if (Props.debugMode)
             {
-                MOLog.Message($"CompCavernCreatureSpawner: {config.label} - Stability: {currentStabilityLoss:P1}, Next spawn in {scaledInterval:F1} days ({intervalTicks} ticks)");
+                MOLog.Message($"CompCavernCreatureSpawner: {config.label} - Stability: {currentStabilityLoss:P1}, Multiplier: {frequencyMultiplier:F2}x, Next spawn in {scaledInterval:F1} days");
             }
         }
 
