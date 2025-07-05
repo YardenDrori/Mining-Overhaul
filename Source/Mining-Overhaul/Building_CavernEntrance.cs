@@ -15,13 +15,11 @@ namespace MiningOverhaul
         private const int StabilityDurationTicks = 36000; // Time until collapse starts
         private const int MiningInstabilityIncrease = 1000; // Adjust this value as needed
         private const int PartialCollapseInterval = 120; // Ticks between blocking cells
-        private const int AcceleratedCollapseInterval = 15; // Very fast collapse (8 blocks every 15 ticks = 32 blocks/second)
+        private const int AcceleratedCollapseInterval = 15; // Much faster blocking during collapse
         
         // Performance optimization constants
-        private const int CELLS_PER_REFRESH = 25; // Process this many cells per tick during normal operation
-        private const int CELLS_PER_VALIDATION = 10; // Validate this many cells per tick during normal operation
-        private const int COLLAPSE_CELLS_PER_REFRESH = 75; // Faster processing during collapse
-        private const int COLLAPSE_CELLS_PER_VALIDATION = 30; // Faster validation during collapse
+        private const int CELLS_PER_REFRESH = 50; // Process this many cells per tick
+        private const int CELLS_PER_VALIDATION = 20; // Validate this many cells per tick
         private const int CACHE_REFRESH_INTERVAL = 300; // Refresh cache every 5 seconds
         #endregion
 
@@ -59,13 +57,6 @@ namespace MiningOverhaul
         private Dictionary<IntVec3, bool> adjacentRockCache = new Dictionary<IntVec3, bool>(); // Cache expensive lookups
         private int lastCacheRefresh = -999999; // When we last refreshed cache
         private bool hasCompletedFullRefresh = false; // Track if we've done a complete refresh cycle
-        
-        // NEW: Cache expensive collections
-        private IntVec3[] allCellsArray = null;
-        private int allCellsCount = 0;
-        private int cachedColonistCount = 0;
-        private int lastColonistCountCheck = -999999;
-        private const int COLONIST_COUNT_CACHE_INTERVAL = 60; // 1 second
 
         // Monitored building states
         private bool hasStabilizer = false;
@@ -129,12 +120,6 @@ namespace MiningOverhaul
             if (blockableCells == null) blockableCells = new List<IntVec3>();
             if (blockableCellsSet == null) blockableCellsSet = new HashSet<IntVec3>(blockableCells);
             if (adjacentRockCache == null) adjacentRockCache = new Dictionary<IntVec3, bool>();
-            
-            // Reinitialize cached arrays after loading if pocket map exists
-            if (base.PocketMapExists && pocketMap != null && allCellsArray == null)
-            {
-                InitializeCellsArray();
-            }
         }
 
         public override void SpawnSetup(Map map, bool respawningAfterLoad)
@@ -149,12 +134,6 @@ namespace MiningOverhaul
                 EffecterDefOf.ImpactDustCloud.Spawn(base.Position, base.Map).Cleanup();
                 Find.CameraDriver.shaker.DoShake(0.1f, 120);
                 SoundDefOf.PitGateOpen.PlayOneShot(SoundInfo.InMap(this));
-            }
-            
-            // Initialize cached collections when pocket map becomes available
-            if (base.PocketMapExists && pocketMap != null)
-            {
-                InitializeCellsArray();
             }
         }
 
@@ -217,7 +196,7 @@ namespace MiningOverhaul
                 string debugInfo = $"DEV: Stability: {GetStabilityPercent():P1} ({stabilityLost}/{StabilityDurationTicks})";
                 if (base.PocketMapExists && pocketMap != null)
                 {
-                    int colonistCount = GetCachedColonistCount();
+                    int colonistCount = pocketMap.mapPawns.FreeColonists.Count();
                     float multiplier = GetStabilityMultiplier(colonistCount);
                     debugInfo += $"\nColonists: {colonistCount} (x{multiplier:F2} rate)";
                     debugInfo += $"\nPartial Collapse: {isPartiallyCollapsing}";
@@ -301,7 +280,7 @@ namespace MiningOverhaul
         {
             if (!base.PocketMapExists || pocketMap == null) return 1;
 
-            int colonistCount = GetCachedColonistCount();
+            int colonistCount = pocketMap.mapPawns.FreeColonists.Count();
             float multiplier = GetStabilityMultiplier(colonistCount);
             int baseIncrease = Mathf.RoundToInt(1 * multiplier);
 
@@ -491,54 +470,88 @@ namespace MiningOverhaul
             caveExitPosition = pocketMap.Center;
         }
 
-        // SIMPLE: Get all walkable cells that can be blocked
+        // OPTIMIZED: Now incremental instead of processing all cells at once
         private void RefreshBlockableCells()
         {
-            blockableCells.Clear();
-            blockableCellsSet.Clear();
-            
+            // Don't start over if we're already refreshing
+            if (refreshIndex == 0)
+            {
+                blockableCells.Clear();
+                blockableCellsSet.Clear();
+                hasCompletedFullRefresh = false; // Starting a new refresh cycle
+                
+                // Refresh adjacent rock cache if it's old
+                if (Find.TickManager.TicksGame > lastCacheRefresh + CACHE_REFRESH_INTERVAL)
+                {
+                    adjacentRockCache.Clear();
+                    lastCacheRefresh = Find.TickManager.TicksGame;
+                }
+            }
+
             if (!base.PocketMapExists || pocketMap == null) 
             {
-                hasCompletedFullRefresh = true;
+                refreshIndex = 0;
+                hasCompletedFullRefresh = true; // No map = nothing to refresh
                 return;
             }
 
-            // Cache exit position if needed
-            if (!caveExitPosition.IsValid)
-            {
-                CacheExitPosition();
-            }
+            var allCells = pocketMap.AllCells;
+            int totalCells = allCells.Count();
+            int endIndex = Mathf.Min(refreshIndex + CELLS_PER_REFRESH, totalCells);
 
-            // Simple: any walkable cell can be blocked
-            foreach (IntVec3 cell in pocketMap.AllCells)
+            // Process a chunk of cells this tick
+            for (int i = refreshIndex; i < endIndex; i++)
             {
-                if (IsSimpleBlockableCell(cell))
+                IntVec3 cell = allCells.ElementAt(i);
+                if (IsValidBlockableCell(cell))
                 {
                     blockableCells.Add(cell);
                     blockableCellsSet.Add(cell);
                 }
             }
+
+            refreshIndex = endIndex;
             
-            hasCompletedFullRefresh = true;
+            // Mark refresh as complete when we've processed all cells
+            if (refreshIndex >= totalCells)
+            {
+                refreshIndex = 0;
+                hasCompletedFullRefresh = true; // We've checked every cell
+            }
         }
 
-        // SIMPLE: Basic check for blockable cells
-        private bool IsSimpleBlockableCell(IntVec3 cell)
+        // OPTIMIZED: Early exits, caching, and faster operations
+        private bool IsValidBlockableCell(IntVec3 cell)
         {
-            // Basic checks
-            if (!cell.InBounds(pocketMap) || !cell.Walkable(pocketMap) || cell.Fogged(pocketMap))
-                return false;
-                
-            // Don't block cells with pawns
+            // Early exit checks first (cheapest operations)
+            if (!cell.InBounds(pocketMap)) return false;
+            if (!cell.Walkable(pocketMap)) return false;
+            
+            // Check edifice (still cheap)
+            if (cell.GetEdifice(pocketMap) != null) return false;
+            
+            // Check for blocking things - optimize the LINQ away
             var thingList = cell.GetThingList(pocketMap);
-            if (thingList.Any(t => t.def.category == ThingCategory.Pawn))
-                return false;
-                
-            // Avoid exit area (keep path clear)
-            if (caveExitPosition.IsValid && cell.DistanceTo(caveExitPosition) < 3)
-                return false;
-                
-            return true;
+            for (int i = 0; i < thingList.Count; i++)
+            {
+                if (thingList[i].def.passability == Traversability.Impassable)
+                    return false;
+            }
+            
+            // Avoidance logic (quick distance checks using squared distance to avoid sqrt)
+            if (useCenterAvoidance)
+            {
+                if (cell.DistanceToSquared(pocketMap.Center) < centerAvoidanceRange * centerAvoidanceRange) 
+                    return false;
+            }
+            else
+            {
+                if (caveExitPosition.IsValid && cell.DistanceToSquared(caveExitPosition) < 9) // 3*3
+                    return false;
+            }
+            
+            // Most expensive check last - use caching
+            return HasAdjacentRock(cell);
         }
 
         // NEW: Cached method for expensive adjacent rock check
@@ -568,55 +581,113 @@ namespace MiningOverhaul
             return hasRock;
         }
 
-
-        // SIMPLE: Block cave cells without overcomplicated logic
-        private void TryBlockCaveCells()
+        // OPTIMIZED: Now incremental validation instead of full list every time
+        private void ValidateBlockableCells()
         {
             if (!base.PocketMapExists || pocketMap == null)
+            {
+                blockableCells.Clear();
+                blockableCellsSet.Clear();
+                validationIndex = 0;
                 return;
+            }
             
-            // Refresh cells if needed
-            if (blockableCells.Count < 50 || Find.TickManager.TicksGame % 300 == 0) // Every 5 seconds
+            if (blockableCells.Count == 0)
+            {
+                validationIndex = 0;
+                return;
+            }
+            
+            // Only validate a few cells per tick to spread the load
+            int cellsToValidate = Mathf.Min(CELLS_PER_VALIDATION, blockableCells.Count - validationIndex);
+            
+            for (int i = 0; i < cellsToValidate; i++)
+            {
+                int currentIndex = validationIndex + i;
+                if (currentIndex >= blockableCells.Count) break;
+                
+                IntVec3 cell = blockableCells[currentIndex];
+                if (!IsValidBlockableCell(cell))
+                {
+                    // Remove invalid cell from both data structures
+                    blockableCells.RemoveAt(currentIndex);
+                    blockableCellsSet.Remove(cell);
+                    // Don't increment validation index since we removed an item
+                    i--; // Check the same index again since items shifted
+                    cellsToValidate = Mathf.Min(cellsToValidate, blockableCells.Count - validationIndex);
+                }
+            }
+            
+            validationIndex += cellsToValidate;
+            
+            // Reset validation index when we've checked all cells
+            if (validationIndex >= blockableCells.Count)
+            {
+                validationIndex = 0;
+            }
+        }
+
+        // UPDATED: Uses new optimized validation and refresh systems
+        private void TryBlockCaveCells()
+        {
+            // Early exit if no pocket map exists
+            if (!base.PocketMapExists || pocketMap == null)
+            {
+                return;
+            }
+            
+            // Do incremental validation instead of full validation
+            ValidateBlockableCells();
+            
+            // If we're running low on cells and not currently refreshing, start a refresh
+            if (blockableCells.Count < 10 && refreshIndex == 0)
             {
                 RefreshBlockableCells();
             }
             
-            // Check if cave is mostly filled - trigger final collapse
-            if (isCollapsing)
+            // Continue with incremental refresh if in progress
+            if (refreshIndex > 0)
             {
-                int walkableCells = pocketMap.AllCells.Count(c => c.Walkable(pocketMap));
-                int totalCells = pocketMap.AllCells.Count();
-                float percentFilled = 1f - ((float)walkableCells / totalCells);
-                
-                if (percentFilled > 0.8f) // 80% filled
+                RefreshBlockableCells();
+            }
+            
+            // Only trigger final collapse if we've completed a full refresh and found no cells
+            if (blockableCells.Count == 0 && hasCompletedFullRefresh)
+            {
+                if (isCollapsing)
                 {
-                    MOLog.Message($"Cave {percentFilled:P0} filled - triggering final destruction");
+                    MOLog.Message("Cave completely filled - triggering final collapse");
                     Collapse();
                     return;
                 }
+                // If not collapsing yet, just wait - we might find more cells as things change
             }
 
-            // Block cells based on collapse state
-            int blocksToPlace = isCollapsing ? 8 : 1; // Much faster during collapse
-            
-            for (int i = 0; i < blocksToPlace && blockableCells.Count > 0; i++)
+            IntVec3 cellToBlock = ChooseStrategicCellToBlock();
+
+            if (cellToBlock != IntVec3.Invalid)
             {
-                IntVec3 cellToBlock = blockableCells.RandomElement();
+                // Spawn blocking rock
+                GenSpawn.Spawn(ThingDef.Named("MO_WeakRock"), cellToBlock, pocketMap);
                 
-                if (cellToBlock.IsValid)
+                // Remove from both data structures for O(1) performance
+                blockableCells.Remove(cellToBlock);
+                blockableCellsSet.Remove(cellToBlock);
+                
+                // Invalidate cache for this cell and neighbors
+                InvalidateCacheAround(cellToBlock);
+                
+                // Reset the refresh completion flag since placing a rock might create new blockable cells
+                hasCompletedFullRefresh = false;
+
+                // Visual effects (only when viewing cavern)
+                if (Find.CurrentMap == pocketMap)
                 {
-                    // Place rock
-                    GenSpawn.Spawn(ThingDef.Named("MO_WeakRock"), cellToBlock, pocketMap);
-                    blockableCells.Remove(cellToBlock);
-                    
-                    // Visual effects
-                    if (Find.CurrentMap == pocketMap && i == 0)
+                    EffecterDefOf.ImpactSmallDustCloud.Spawn(cellToBlock, pocketMap).Cleanup();
+
+                    if (isCollapsing)
                     {
-                        EffecterDefOf.ImpactSmallDustCloud.Spawn(cellToBlock, pocketMap).Cleanup();
-                        if (isCollapsing)
-                        {
-                            Find.CameraDriver.shaker.DoShake(0.1f);
-                        }
+                        Find.CameraDriver.shaker.DoShake(0.06f);
                     }
                 }
             }
@@ -633,6 +704,13 @@ namespace MiningOverhaul
             }
         }
 
+        private IntVec3 ChooseStrategicCellToBlock()
+        {
+            if (blockableCells.Count == 0) return IntVec3.Invalid;
+
+            // TODO: Add strategic logic (narrow passages, important areas, etc.)
+            return blockableCells.RandomElement();
+        }
         #endregion
 
         #region Full Collapse System
@@ -760,47 +838,6 @@ namespace MiningOverhaul
             }
             
             lastThingCheckTick = Find.TickManager.TicksGame;
-        }
-        #endregion
-        
-        #region Performance Helper Methods
-        // NEW: Initialize cached collections for O(1) access
-        private void InitializeCellsArray()
-        {
-            if (pocketMap != null)
-            {
-                allCellsArray = pocketMap.AllCells.ToArray();
-                allCellsCount = allCellsArray.Length;
-            }
-        }
-        
-        // NEW: Cache colonist count to avoid expensive calls
-        private int GetCachedColonistCount()
-        {
-            if (Find.TickManager.TicksGame > lastColonistCountCheck + COLONIST_COUNT_CACHE_INTERVAL)
-            {
-                if (pocketMap != null)
-                {
-                    cachedColonistCount = pocketMap.mapPawns.FreeColonists.Count();
-                }
-                lastColonistCountCheck = Find.TickManager.TicksGame;
-            }
-            return cachedColonistCount;
-        }
-        
-        // NEW: Optimized thing list check
-        private bool HasImpassableThings(IntVec3 cell)
-        {
-            var thingList = cell.GetThingList(pocketMap);
-            if (thingList.Count == 0) return false;
-            
-            // Use for loop instead of LINQ for better performance
-            for (int i = 0; i < thingList.Count; i++)
-            {
-                if (thingList[i].def.passability == Traversability.Impassable)
-                    return true;
-            }
-            return false;
         }
         #endregion
         
