@@ -76,10 +76,10 @@
                         <li>Rat</li>
                         <li>Squirrel</li>
                     </creatureDefNames>
-                    <baseSpawnCountRange>2~4</baseSpawnCountRange>           <!-- Count at 50% instability -->
-                    <baseSpawnFrequencyHours>0.5</baseSpawnFrequencyHours>  <!-- 30 minutes at 50% instability -->
-                    <instabilityScalingFactor>0.8</instabilityScalingFactor> <!-- Low scaling for harmless creatures -->
-                    <spawnChance>0.7</spawnChance>
+                    <baseSpawnCountRange>1~2</baseSpawnCountRange>           <!-- Reduced from 2~4 -->
+                    <baseSpawnFrequencyHours>2.0</baseSpawnFrequencyHours>  <!-- Increased from 0.5 to 2 hours -->
+                    <instabilityScalingFactor>0.6</instabilityScalingFactor> <!-- Reduced scaling -->
+                    <spawnChance>0.8</spawnChance>                          <!-- Increased chance -->
                     <minStabilityLoss>0.0</minStabilityLoss>
                     <maxStabilityLoss>0.25</maxStabilityLoss>
                     <spawnRadius>3</spawnRadius>
@@ -97,9 +97,9 @@
                         <li>Fox_Fennec</li>
                     </creatureDefNames>
                     <baseSpawnCountRange>1~2</baseSpawnCountRange>           <!-- Count at 50% instability -->
-                    <baseSpawnFrequencyHours>1.5</baseSpawnFrequencyHours>  <!-- 1.5 hours at 50% instability -->
-                    <instabilityScalingFactor>1.0</instabilityScalingFactor> <!-- Normal scaling -->
-                    <spawnChance>0.6</spawnChance>
+                    <baseSpawnFrequencyHours>3.0</baseSpawnFrequencyHours>  <!-- Increased from 1.5 to 3 hours -->
+                    <instabilityScalingFactor>0.8</instabilityScalingFactor> <!-- Reduced scaling -->
+                    <spawnChance>0.7</spawnChance>                          <!-- Increased chance -->
                     <minStabilityLoss>0.25</minStabilityLoss>
                     <maxStabilityLoss>0.5</maxStabilityLoss>
                     <spawnRadius>2</spawnRadius>
@@ -118,9 +118,9 @@
                         <li>Bear_Polar</li>
                     </creatureDefNames>
                     <baseSpawnCountRange>1~2</baseSpawnCountRange>           <!-- Count at 50% instability -->
-                    <baseSpawnFrequencyHours>1.0</baseSpawnFrequencyHours>  <!-- 1 hour at 50% instability -->
-                    <instabilityScalingFactor>1.5</instabilityScalingFactor> <!-- Higher scaling for dangerous creatures -->
-                    <spawnChance>0.5</spawnChance>
+                    <baseSpawnFrequencyHours>4.0</baseSpawnFrequencyHours>  <!-- Increased from 1 to 4 hours -->
+                    <instabilityScalingFactor>1.0</instabilityScalingFactor> <!-- Reduced scaling -->
+                    <spawnChance>0.6</spawnChance>                          <!-- Increased chance -->
                     <minStabilityLoss>0.5</minStabilityLoss>
                     <maxStabilityLoss>0.75</maxStabilityLoss>
                     <spawnRadius>4</spawnRadius>
@@ -142,9 +142,9 @@
                         <li>Spelopede</li>
                         <li>Megascarab</li>
                     </creatureDefNames>
-                    <baseSpawnCountRange>2~4</baseSpawnCountRange>           <!-- Count at 50% instability -->
-                    <baseSpawnFrequencyHours>0.75</baseSpawnFrequencyHours> <!-- 45 minutes at 50% instability -->
-                    <instabilityScalingFactor>2.0</instabilityScalingFactor> <!-- Maximum scaling for swarms -->
+                    <baseSpawnCountRange>1~3</baseSpawnCountRange>           <!-- Reduced from 2~4 -->
+                    <baseSpawnFrequencyHours>2.0</baseSpawnFrequencyHours>  <!-- Increased from 0.75 to 2 hours -->
+                    <instabilityScalingFactor>1.2</instabilityScalingFactor> <!-- Reduced from 2.0 -->
                     <spawnChance>0.8</spawnChance>
                     <minStabilityLoss>0.75</minStabilityLoss>
                     <maxStabilityLoss>1.0</maxStabilityLoss>

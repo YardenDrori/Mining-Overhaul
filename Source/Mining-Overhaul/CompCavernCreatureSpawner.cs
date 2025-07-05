@@ -424,13 +424,15 @@ namespace MiningOverhaul
 
         private int CalculateScaledSpawnCount(CreatureSpawnConfig config, float currentStabilityLoss)
         {
-            // Calculate effective stability for scaling: apply scaling factor and normalize to 50% baseline
+            // NEW: Much gentler count scaling - linear instead of exponential
+            // Use square root scaling for counts to prevent explosion
             float effectiveStability = currentStabilityLoss * config.instabilityScalingFactor;
             
-            // At 50% (0.5) instability, we want 1.0 multiplier
-            // At 100% (1.0) instability with scaling factor 1, we want 2.0 multiplier  
-            // At 10% (0.1) instability with scaling factor 1, we want 0.2 multiplier
-            float countMultiplier = effectiveStability / 0.5f;
+            // Gentler scaling: 0% = 0.5x, 50% = 1.0x, 100% = 1.5x (instead of 0x, 1x, 2x)
+            float countMultiplier = 0.5f + (effectiveStability * 1.0f);
+            
+            // Cap the multiplier to prevent explosions
+            countMultiplier = Mathf.Clamp(countMultiplier, 0.3f, 2.0f);
             
             // Apply multiplier to base count range
             float scaledMin = config.baseSpawnCountRange.min * countMultiplier;
@@ -598,30 +600,24 @@ namespace MiningOverhaul
         {
             float currentStabilityLoss = GetCurrentStabilityLossPercent();
             
-            // If stability is 0, use base frequency as-is (no scaling)
-            if (currentStabilityLoss <= 0.01f)
-            {
-                float baseIntervalHours = config.baseSpawnFrequencyHours;
-                int baseTicks = Mathf.RoundToInt(baseIntervalHours * 2500f); // 1 hour = 2500 ticks
-                nextSpawnTicks[config] = Find.TickManager.TicksGame + baseTicks;
-                
-                if (Props.debugMode)
-                {
-                    MOLog.Message($"CompCavernCreatureSpawner: {config.label} - Zero stability, using base interval: {baseIntervalHours:F1} hours");
-                }
-                return;
-            }
-            
-            // Calculate effective stability for scaling: apply scaling factor and normalize to 50% baseline
+            // NEW: Better frequency scaling - more spawns at low levels, controlled growth
             float effectiveStability = currentStabilityLoss * config.instabilityScalingFactor;
             
-            // At 50% (0.5) instability, we want 1.0 frequency multiplier (baseline)
-            // Higher instability = more frequent spawning (shorter intervals)
-            // Lower instability = less frequent spawning (longer intervals)
-            float frequencyMultiplier = effectiveStability / 0.5f;
-            
-            // Ensure reasonable bounds: 0.1x to 10x frequency (caves need quick response)
-            frequencyMultiplier = Mathf.Clamp(frequencyMultiplier, 0.1f, 10f);
+            // Much gentler frequency scaling:
+            // 0% stability = 2.0x intervals (half frequency)
+            // 50% stability = 1.0x intervals (base frequency) 
+            // 100% stability = 0.4x intervals (2.5x frequency)
+            float frequencyMultiplier;
+            if (currentStabilityLoss <= 0.01f)
+            {
+                frequencyMultiplier = 0.5f; // Half frequency at 0%
+            }
+            else
+            {
+                // Logarithmic scaling for smoother progression
+                frequencyMultiplier = 0.5f + (effectiveStability * 1.5f);
+                frequencyMultiplier = Mathf.Clamp(frequencyMultiplier, 0.3f, 3.0f);
+            }
             
             // Calculate scaled interval: higher frequency multiplier = shorter interval
             float scaledIntervalHours = config.baseSpawnFrequencyHours / frequencyMultiplier;
