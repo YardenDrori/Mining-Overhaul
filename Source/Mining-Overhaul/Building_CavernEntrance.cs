@@ -649,7 +649,7 @@ namespace MiningOverhaul
             }
         }
 
-        // UPDATED: Uses new optimized validation and refresh systems with better tick distribution
+        // FIXED: Ensures collapse works properly while maintaining performance
         private void TryBlockCaveCells()
         {
             // Early exit if no pocket map exists
@@ -658,33 +658,33 @@ namespace MiningOverhaul
                 return;
             }
             
-            // Spread expensive operations across different ticks to prevent lag spikes
+            // Spread expensive operations, but ensure collapse always works
             int currentTick = Find.TickManager.TicksGame;
             
-            // Only do validation every 3rd call (every ~180-45 ticks depending on collapse state)
-            if (currentTick % 3 == 0)
+            // During collapse phase, always do validation to ensure progress
+            if (isCollapsing)
+            {
+                ValidateBlockableCells();
+            }
+            else if (currentTick % 3 == 0) // Normal phase: reduce validation frequency
             {
                 ValidateBlockableCells();
             }
             
-            // Only do refresh every 5th call and when we need it
-            if (currentTick % 5 == 0)
+            // Aggressive refresh during collapse, reduced during normal operation
+            bool needsRefresh = (blockableCells.Count < 10 && refreshIndex == 0) || refreshIndex > 0;
+            if (isCollapsing && needsRefresh)
             {
-                // If we're running low on cells and not currently refreshing, start a refresh
-                if (blockableCells.Count < 10 && refreshIndex == 0)
-                {
-                    RefreshBlockableCells();
-                }
-                
-                // Continue with incremental refresh if in progress
-                if (refreshIndex > 0)
-                {
-                    RefreshBlockableCells();
-                }
+                RefreshBlockableCells(); // Always refresh during collapse
+            }
+            else if (currentTick % 5 == 0 && needsRefresh)
+            {
+                RefreshBlockableCells(); // Reduced frequency during normal operation
             }
             
-            // Only check for final collapse every 10th call to reduce overhead
-            if (currentTick % 10 == 0)
+            // Check for final collapse - more frequently during collapse phase
+            int collapseCheckInterval = isCollapsing ? 3 : 10;
+            if (currentTick % collapseCheckInterval == 0)
             {
                 // Only trigger final collapse if we've completed a full refresh and found no cells
                 if (blockableCells.Count == 0 && hasCompletedFullRefresh)
@@ -711,8 +711,8 @@ namespace MiningOverhaul
                 blockableCells.Remove(cellToBlock);
                 blockableCellsSet.Remove(cellToBlock);
                 
-                // Only invalidate cache every 5th rock placement to reduce overhead
-                if (currentTick % 5 == 0)
+                // Always invalidate cache during collapse to ensure proper cell discovery
+                if (isCollapsing || currentTick % 3 == 0)
                 {
                     InvalidateCacheAround(cellToBlock);
                 }
