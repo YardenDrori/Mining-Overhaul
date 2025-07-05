@@ -77,7 +77,7 @@
                         <li>Squirrel</li>
                     </creatureDefNames>
                     <baseSpawnCountRange>2~4</baseSpawnCountRange>           <!-- Count at 50% instability -->
-                    <baseSpawnFrequencyDays>0.1</baseSpawnFrequencyDays>    <!-- TESTING: Very fast spawning -->
+                    <baseSpawnFrequencyHours>0.5</baseSpawnFrequencyHours>  <!-- 30 minutes at 50% instability -->
                     <instabilityScalingFactor>0.8</instabilityScalingFactor> <!-- Low scaling for harmless creatures -->
                     <spawnChance>0.7</spawnChance>
                     <minStabilityLoss>0.0</minStabilityLoss>
@@ -97,7 +97,7 @@
                         <li>Fox_Fennec</li>
                     </creatureDefNames>
                     <baseSpawnCountRange>1~2</baseSpawnCountRange>           <!-- Count at 50% instability -->
-                    <baseSpawnFrequencyDays>2.5</baseSpawnFrequencyDays>    <!-- Frequency at 50% instability -->
+                    <baseSpawnFrequencyHours>1.5</baseSpawnFrequencyHours>  <!-- 1.5 hours at 50% instability -->
                     <instabilityScalingFactor>1.0</instabilityScalingFactor> <!-- Normal scaling -->
                     <spawnChance>0.6</spawnChance>
                     <minStabilityLoss>0.25</minStabilityLoss>
@@ -118,7 +118,7 @@
                         <li>Bear_Polar</li>
                     </creatureDefNames>
                     <baseSpawnCountRange>1~2</baseSpawnCountRange>           <!-- Count at 50% instability -->
-                    <baseSpawnFrequencyDays>2.0</baseSpawnFrequencyDays>    <!-- Frequency at 50% instability -->
+                    <baseSpawnFrequencyHours>1.0</baseSpawnFrequencyHours>  <!-- 1 hour at 50% instability -->
                     <instabilityScalingFactor>1.5</instabilityScalingFactor> <!-- Higher scaling for dangerous creatures -->
                     <spawnChance>0.5</spawnChance>
                     <minStabilityLoss>0.5</minStabilityLoss>
@@ -143,7 +143,7 @@
                         <li>Megascarab</li>
                     </creatureDefNames>
                     <baseSpawnCountRange>2~4</baseSpawnCountRange>           <!-- Count at 50% instability -->
-                    <baseSpawnFrequencyDays>1.5</baseSpawnFrequencyDays>    <!-- Frequency at 50% instability -->
+                    <baseSpawnFrequencyHours>0.75</baseSpawnFrequencyHours> <!-- 45 minutes at 50% instability -->
                     <instabilityScalingFactor>2.0</instabilityScalingFactor> <!-- Maximum scaling for swarms -->
                     <spawnChance>0.8</spawnChance>
                     <minStabilityLoss>0.75</minStabilityLoss>

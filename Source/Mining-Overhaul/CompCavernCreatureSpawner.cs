@@ -13,7 +13,7 @@ namespace MiningOverhaul
         public string label = "Spawn Group";
         public List<string> creatureDefNames = new List<string>();
         public FloatRange baseSpawnCountRange = new FloatRange(1, 3);  // Count at 50% instability
-        public float baseSpawnFrequencyDays = 1.0f;                   // Frequency at 50% instability
+        public float baseSpawnFrequencyHours = 1.0f;                  // Frequency at 50% instability (in hours)
         public float instabilityScalingFactor = 1.0f;                 // How much instability affects frequency/count
         public float spawnChance = 1.0f;
         public float minStabilityLoss = 0.0f;
@@ -532,13 +532,13 @@ namespace MiningOverhaul
             // If stability is 0, use base frequency as-is (no scaling)
             if (currentStabilityLoss <= 0.01f)
             {
-                float baseInterval = config.baseSpawnFrequencyDays;
-                int baseTicks = Mathf.RoundToInt(baseInterval * 60000f);
+                float baseIntervalHours = config.baseSpawnFrequencyHours;
+                int baseTicks = Mathf.RoundToInt(baseIntervalHours * 2500f); // 1 hour = 2500 ticks
                 nextSpawnTicks[config] = Find.TickManager.TicksGame + baseTicks;
                 
                 if (Props.debugMode)
                 {
-                    MOLog.Message($"CompCavernCreatureSpawner: {config.label} - Zero stability, using base interval: {baseInterval:F1} days");
+                    MOLog.Message($"CompCavernCreatureSpawner: {config.label} - Zero stability, using base interval: {baseIntervalHours:F1} hours");
                 }
                 return;
             }
@@ -551,20 +551,20 @@ namespace MiningOverhaul
             // Lower instability = less frequent spawning (longer intervals)
             float frequencyMultiplier = effectiveStability / 0.5f;
             
-            // Ensure reasonable bounds: 0.1x to 5x frequency
-            frequencyMultiplier = Mathf.Clamp(frequencyMultiplier, 0.1f, 5f);
+            // Ensure reasonable bounds: 0.1x to 10x frequency (caves need quick response)
+            frequencyMultiplier = Mathf.Clamp(frequencyMultiplier, 0.1f, 10f);
             
             // Calculate scaled interval: higher frequency multiplier = shorter interval
-            float scaledInterval = config.baseSpawnFrequencyDays / frequencyMultiplier;
+            float scaledIntervalHours = config.baseSpawnFrequencyHours / frequencyMultiplier;
             
-            // Convert to ticks (1 day = 60000 ticks)
-            int intervalTicks = Mathf.RoundToInt(scaledInterval * 60000f);
+            // Convert to ticks (1 hour = 2500 ticks)
+            int intervalTicks = Mathf.RoundToInt(scaledIntervalHours * 2500f);
             
             nextSpawnTicks[config] = Find.TickManager.TicksGame + intervalTicks;
             
             if (Props.debugMode)
             {
-                MOLog.Message($"CompCavernCreatureSpawner: {config.label} - Stability: {currentStabilityLoss:P1}, Multiplier: {frequencyMultiplier:F2}x, Next spawn in {scaledInterval:F1} days");
+                MOLog.Message($"CompCavernCreatureSpawner: {config.label} - Stability: {currentStabilityLoss:P1}, Multiplier: {frequencyMultiplier:F2}x, Next spawn in {scaledIntervalHours:F1} hours");
             }
         }
 
