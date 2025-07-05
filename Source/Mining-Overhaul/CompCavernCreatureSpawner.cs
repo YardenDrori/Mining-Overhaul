@@ -424,15 +424,20 @@ namespace MiningOverhaul
 
         private int CalculateScaledSpawnCount(CreatureSpawnConfig config, float currentStabilityLoss)
         {
-            // NEW: Much gentler count scaling - linear instead of exponential
-            // Use square root scaling for counts to prevent explosion
-            float effectiveStability = currentStabilityLoss * config.instabilityScalingFactor;
+            // TRUE SCALING: instabilityScalingFactor controls how much stability affects spawning
+            // At 50% instability, we want 1.0x multiplier (baseline)
+            // scalingFactor = 0.5 means stability has half effect
+            // scalingFactor = 2.0 means stability has double effect
             
-            // Gentler scaling: 0% = 0.5x, 50% = 1.0x, 100% = 1.5x (instead of 0x, 1x, 2x)
-            float countMultiplier = 0.5f + (effectiveStability * 1.0f);
+            float baselineStability = 0.5f; // 50% instability = baseline
+            float stabilityDifference = currentStabilityLoss - baselineStability;
+            float scaledDifference = stabilityDifference * config.instabilityScalingFactor;
             
-            // Cap the multiplier to prevent explosions
-            countMultiplier = Mathf.Clamp(countMultiplier, 0.3f, 2.0f);
+            // Convert to multiplier: 50% = 1.0x, above/below scales with factor
+            float countMultiplier = 1.0f + scaledDifference;
+            
+            // Ensure minimum spawning and reasonable caps
+            countMultiplier = Mathf.Clamp(countMultiplier, 0.3f, 3.0f);
             
             // Apply multiplier to base count range
             float scaledMin = config.baseSpawnCountRange.min * countMultiplier;
@@ -600,24 +605,17 @@ namespace MiningOverhaul
         {
             float currentStabilityLoss = GetCurrentStabilityLossPercent();
             
-            // NEW: Better frequency scaling - more spawns at low levels, controlled growth
-            float effectiveStability = currentStabilityLoss * config.instabilityScalingFactor;
+            // TRUE SCALING: instabilityScalingFactor controls how much stability affects frequency
+            float baselineStability = 0.5f; // 50% instability = baseline
+            float stabilityDifference = currentStabilityLoss - baselineStability;
+            float scaledDifference = stabilityDifference * config.instabilityScalingFactor;
             
-            // Much gentler frequency scaling:
-            // 0% stability = 2.0x intervals (half frequency)
-            // 50% stability = 1.0x intervals (base frequency) 
-            // 100% stability = 0.4x intervals (2.5x frequency)
-            float frequencyMultiplier;
-            if (currentStabilityLoss <= 0.01f)
-            {
-                frequencyMultiplier = 0.5f; // Half frequency at 0%
-            }
-            else
-            {
-                // Logarithmic scaling for smoother progression
-                frequencyMultiplier = 0.5f + (effectiveStability * 1.5f);
-                frequencyMultiplier = Mathf.Clamp(frequencyMultiplier, 0.3f, 3.0f);
-            }
+            // Convert to frequency multiplier: 50% = 1.0x, above/below scales with factor
+            // Higher frequency = shorter intervals = more spawns
+            float frequencyMultiplier = 1.0f + scaledDifference;
+            
+            // Ensure reasonable bounds for frequency
+            frequencyMultiplier = Mathf.Clamp(frequencyMultiplier, 0.2f, 4.0f);
             
             // Calculate scaled interval: higher frequency multiplier = shorter interval
             float scaledIntervalHours = config.baseSpawnFrequencyHours / frequencyMultiplier;
