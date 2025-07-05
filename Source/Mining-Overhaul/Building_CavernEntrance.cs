@@ -15,11 +15,11 @@ namespace MiningOverhaul
         private const int StabilityDurationTicks = 36000; // Time until collapse starts
         private const int MiningInstabilityIncrease = 1000; // Adjust this value as needed
         private const int PartialCollapseInterval = 120; // Ticks between blocking cells
-        private const int AcceleratedCollapseInterval = 15; // Much faster blocking during collapse
+        private const int AcceleratedCollapseInterval = 60; // Faster blocking during collapse (was 15 - too aggressive)
         
         // Performance optimization constants
-        private const int CELLS_PER_REFRESH = 50; // Process this many cells per tick
-        private const int CELLS_PER_VALIDATION = 20; // Validate this many cells per tick
+        private const int CELLS_PER_REFRESH = 25; // Process this many cells per tick (reduced from 50)
+        private const int CELLS_PER_VALIDATION = 10; // Validate this many cells per tick (reduced from 20)
         private const int CACHE_REFRESH_INTERVAL = 300; // Refresh cache every 5 seconds
         #endregion
 
@@ -599,7 +599,7 @@ namespace MiningOverhaul
             return hasRock;
         }
 
-        // OPTIMIZED: Now incremental validation instead of full list every time
+        // OPTIMIZED: Now incremental validation with batch removal to avoid list shifting
         private void ValidateBlockableCells()
         {
             if (!base.PocketMapExists || pocketMap == null)
@@ -618,7 +618,9 @@ namespace MiningOverhaul
             
             // Only validate a few cells per tick to spread the load
             int cellsToValidate = Mathf.Min(CELLS_PER_VALIDATION, blockableCells.Count - validationIndex);
+            var cellsToRemove = new List<IntVec3>();
             
+            // Check validity without removing items yet
             for (int i = 0; i < cellsToValidate; i++)
             {
                 int currentIndex = validationIndex + i;
@@ -627,13 +629,15 @@ namespace MiningOverhaul
                 IntVec3 cell = blockableCells[currentIndex];
                 if (!IsValidBlockableCell(cell))
                 {
-                    // Remove invalid cell from both data structures
-                    blockableCells.RemoveAt(currentIndex);
-                    blockableCellsSet.Remove(cell);
-                    // Don't increment validation index since we removed an item
-                    i--; // Check the same index again since items shifted
-                    cellsToValidate = Mathf.Min(cellsToValidate, blockableCells.Count - validationIndex);
+                    cellsToRemove.Add(cell);
                 }
+            }
+            
+            // Batch remove invalid cells to avoid list shifting overhead
+            foreach (var cell in cellsToRemove)
+            {
+                blockableCells.Remove(cell);
+                blockableCellsSet.Remove(cell);
             }
             
             validationIndex += cellsToValidate;
@@ -645,7 +649,7 @@ namespace MiningOverhaul
             }
         }
 
-        // UPDATED: Uses new optimized validation and refresh systems
+        // UPDATED: Uses new optimized validation and refresh systems with better tick distribution
         private void TryBlockCaveCells()
         {
             // Early exit if no pocket map exists
@@ -654,33 +658,48 @@ namespace MiningOverhaul
                 return;
             }
             
-            // Do incremental validation instead of full validation
-            ValidateBlockableCells();
+            // Spread expensive operations across different ticks to prevent lag spikes
+            int currentTick = Find.TickManager.TicksGame;
             
-            // If we're running low on cells and not currently refreshing, start a refresh
-            if (blockableCells.Count < 10 && refreshIndex == 0)
+            // Only do validation every 3rd call (every ~180-45 ticks depending on collapse state)
+            if (currentTick % 3 == 0)
             {
-                RefreshBlockableCells();
+                ValidateBlockableCells();
             }
             
-            // Continue with incremental refresh if in progress
-            if (refreshIndex > 0)
+            // Only do refresh every 5th call and when we need it
+            if (currentTick % 5 == 0)
             {
-                RefreshBlockableCells();
-            }
-            
-            // Only trigger final collapse if we've completed a full refresh and found no cells
-            if (blockableCells.Count == 0 && hasCompletedFullRefresh)
-            {
-                if (isCollapsing)
+                // If we're running low on cells and not currently refreshing, start a refresh
+                if (blockableCells.Count < 10 && refreshIndex == 0)
                 {
-                    MOLog.Message("Cave completely filled - triggering final collapse");
-                    Collapse();
-                    return;
+                    RefreshBlockableCells();
                 }
-                // If not collapsing yet, just wait - we might find more cells as things change
+                
+                // Continue with incremental refresh if in progress
+                if (refreshIndex > 0)
+                {
+                    RefreshBlockableCells();
+                }
+            }
+            
+            // Only check for final collapse every 10th call to reduce overhead
+            if (currentTick % 10 == 0)
+            {
+                // Only trigger final collapse if we've completed a full refresh and found no cells
+                if (blockableCells.Count == 0 && hasCompletedFullRefresh)
+                {
+                    if (isCollapsing)
+                    {
+                        MOLog.Message("Cave completely filled - triggering final collapse");
+                        Collapse();
+                        return;
+                    }
+                    // If not collapsing yet, just wait - we might find more cells as things change
+                }
             }
 
+            // Always try to block a cell (this is the main purpose)
             IntVec3 cellToBlock = ChooseStrategicCellToBlock();
 
             if (cellToBlock != IntVec3.Invalid)
@@ -692,14 +711,17 @@ namespace MiningOverhaul
                 blockableCells.Remove(cellToBlock);
                 blockableCellsSet.Remove(cellToBlock);
                 
-                // Invalidate cache for this cell and neighbors
-                InvalidateCacheAround(cellToBlock);
+                // Only invalidate cache every 5th rock placement to reduce overhead
+                if (currentTick % 5 == 0)
+                {
+                    InvalidateCacheAround(cellToBlock);
+                }
                 
                 // Reset the refresh completion flag since placing a rock might create new blockable cells
                 hasCompletedFullRefresh = false;
 
-                // Visual effects (only when viewing cavern)
-                if (Find.CurrentMap == pocketMap)
+                // Visual effects (only when viewing cavern and not too frequently)
+                if (Find.CurrentMap == pocketMap && currentTick % 2 == 0)
                 {
                     EffecterDefOf.ImpactSmallDustCloud.Spawn(cellToBlock, pocketMap).Cleanup();
 

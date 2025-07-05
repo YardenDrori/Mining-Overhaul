@@ -43,10 +43,14 @@ namespace MiningOverhaul
         private Dictionary<CreatureSpawnConfig, int> nextSpawnTicks = new Dictionary<CreatureSpawnConfig, int>();
         private List<IntVec3> validSpawnCells = new List<IntVec3>();
         private int lastValidationTick = -999999;
-        private const int VALIDATION_INTERVAL = 3600; // Revalidate every 60 seconds (was 10)
-        private const int CELLS_PER_VALIDATION = 50; // Process more cells per tick (was 25)
+        private const int VALIDATION_INTERVAL = 3600; // Revalidate every 60 seconds
+        private const int CELLS_PER_VALIDATION = 25; // Process fewer cells per tick to prevent lag
         private int validationIndex = 0;
         private bool hasInitialValidation = false;
+        
+        // NEW: Cache expensive AllCells collection
+        private IntVec3[] allCellsArray = null;
+        private int allCellsCount = 0;
 
         public CompProperties_CavernCreatureSpawner Props => (CompProperties_CavernCreatureSpawner)props;
 
@@ -60,6 +64,12 @@ namespace MiningOverhaul
                 MOLog.Message($"CompCavernCreatureSpawner: Component spawned, {Props.spawnConfigs.Count} configs loaded - waiting for pocket map");
             }
             // Don't initialize timers until pocket map exists
+            
+            // Initialize cached arrays when pocket map becomes available
+            if (CavernEntrance?.PocketMapExists == true)
+            {
+                InitializeCellsArray();
+            }
         }
 
         private void InitializeSpawnTicks()
@@ -105,6 +115,12 @@ namespace MiningOverhaul
                 {
                     MOLog.Message("CompCavernCreatureSpawner: Pocket map detected - initializing timers");
                 }
+            }
+            
+            // Initialize cached cells array if needed
+            if (allCellsArray == null)
+            {
+                InitializeCellsArray();
             }
 
             // Update valid spawn cells periodically
@@ -158,6 +174,7 @@ namespace MiningOverhaul
             return Find.TickManager.TicksGame >= lastValidationTick + VALIDATION_INTERVAL;
         }
 
+        // OPTIMIZED: Use cached array instead of expensive AllCells.ToList()
         private void UpdateValidSpawnCells()
         {
             var pocketMap = CavernEntrance?.GetPocketMap();
@@ -167,10 +184,13 @@ namespace MiningOverhaul
                 return;
             }
 
-            // Incremental validation to spread CPU load
-            var allCells = pocketMap.AllCells.ToList();
-            int totalCells = allCells.Count;
-            int endIndex = Mathf.Min(validationIndex + CELLS_PER_VALIDATION, totalCells);
+            // Initialize cached array if needed
+            if (allCellsArray == null)
+            {
+                InitializeCellsArray();
+            }
+
+            int endIndex = Mathf.Min(validationIndex + CELLS_PER_VALIDATION, allCellsCount);
 
             // First pass: clear old cells if starting fresh
             if (validationIndex == 0)
@@ -178,10 +198,10 @@ namespace MiningOverhaul
                 validSpawnCells.Clear();
             }
 
-            // Process chunk of cells
+            // Process chunk of cells using cached array (O(1) access)
             for (int i = validationIndex; i < endIndex; i++)
             {
-                IntVec3 cell = allCells[i];
+                IntVec3 cell = allCellsArray[i];
                 if (IsValidSpawnCell(cell))
                 {
                     validSpawnCells.Add(cell);
@@ -191,7 +211,7 @@ namespace MiningOverhaul
             validationIndex = endIndex;
 
             // Complete validation cycle
-            if (validationIndex >= totalCells)
+            if (validationIndex >= allCellsCount)
             {
                 validationIndex = 0;
                 lastValidationTick = Find.TickManager.TicksGame;
@@ -590,6 +610,12 @@ namespace MiningOverhaul
             {
                 InitializeSpawnTicks();
             }
+            
+            // Reinitialize cached arrays after loading if pocket map exists
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && CavernEntrance?.PocketMapExists == true && allCellsArray == null)
+            {
+                InitializeCellsArray();
+            }
         }
 
         public override IEnumerable<Gizmo> CompGetGizmosExtra()
@@ -641,6 +667,17 @@ namespace MiningOverhaul
                     defaultLabel = debugInfo,
                     action = delegate { }
                 };
+            }
+        }
+        
+        // NEW: Initialize cached collections for O(1) access
+        private void InitializeCellsArray()
+        {
+            var pocketMap = CavernEntrance?.GetPocketMap();
+            if (pocketMap != null)
+            {
+                allCellsArray = pocketMap.AllCells.ToArray();
+                allCellsCount = allCellsArray.Length;
             }
         }
     }
