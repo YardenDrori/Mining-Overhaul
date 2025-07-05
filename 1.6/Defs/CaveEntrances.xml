@@ -47,6 +47,22 @@
         <filthDef>Filth_LooseGround</filthDef>
         <thickness>5</thickness>
         </li>
+    </comps>
+    </ThingDef>
+
+
+    <ThingDef ParentName="CavernEntranceBase">
+        <defName>CavernEntrance</defName>
+        <label>cavern entrance</label>
+        <description>A massive, foreboding hole that connects the surface with a network of underground caves. It is possible to climb down into the cavern below. The entrance looks unstable and will collapse in a matter of days.</description>
+        <portal>
+            <pocketMapGenerator>cavern</pocketMapGenerator>
+            <exitDef>CavernExit</exitDef>
+        </portal>
+        <inspectorTabs>
+            <li>ITab_ContentsMapPortal</li>
+        </inspectorTabs>
+        <comps>
         <li Class="MiningOverhaul.CompProperties_CavernCreatureSpawner">
             <exitAvoidanceRadius>6</exitAvoidanceRadius>
             <centerAvoidanceRadius>4</centerAvoidanceRadius>
@@ -145,20 +161,6 @@
                 </li>
             </spawnConfigs>
         </li>
-    </comps>
-    </ThingDef>
-
-
-    <ThingDef ParentName="CavernEntranceBase">
-        <defName>CavernEntrance</defName>
-        <label>cavern entrance</label>
-        <description>A massive, foreboding hole that connects the surface with a network of underground caves. It is possible to climb down into the cavern below. The entrance looks unstable and will collapse in a matter of days.</description>
-        <portal>
-            <pocketMapGenerator>cavern</pocketMapGenerator>
-            <exitDef>CavernExit</exitDef>
-        </portal>
-        <inspectorTabs>
-            <li>ITab_ContentsMapPortal</li>
-        </inspectorTabs>
+        </comps>
     </ThingDef>
 </Defs>
