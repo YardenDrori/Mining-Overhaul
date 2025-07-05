@@ -1,4 +1,5 @@
 using RimWorld;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -51,6 +52,11 @@ namespace MiningOverhaul
         // NEW: Cache expensive AllCells collection
         private IntVec3[] allCellsArray = null;
         private int allCellsCount = 0;
+        
+        // NEW: Cache exit position to avoid repeated searches
+        private IntVec3 cachedExitPosition = IntVec3.Invalid;
+        private int lastExitPositionCheck = -999999;
+        private const int EXIT_POSITION_CACHE_INTERVAL = 600; // 10 seconds
 
         public CompProperties_CavernCreatureSpawner Props => (CompProperties_CavernCreatureSpawner)props;
 
@@ -230,27 +236,32 @@ namespace MiningOverhaul
             }
         }
 
+        // OPTIMIZED: Faster validation with caching and optimized loops
         private bool IsValidSpawnCell(IntVec3 cell)
         {
             var map = CavernEntrance?.GetPocketMap();
             if (map == null)
                 return false;
 
-            // Basic cell validation
+            // Basic cell validation (cheap operations first)
             if (!cell.InBounds(map) || !cell.Walkable(map) || cell.Fogged(map))
                 return false;
 
-            // Check for blocking things
-            if (cell.GetThingList(map).Any(t => t.def.category == ThingCategory.Building || 
-                                                t.def.category == ThingCategory.Pawn ||
-                                                t.def.passability == Traversability.Impassable))
-                return false;
+            // Check for blocking things - optimized loop instead of LINQ
+            var thingList = cell.GetThingList(map);
+            for (int i = 0; i < thingList.Count; i++)
+            {
+                var thing = thingList[i];
+                if (thing.def.category == ThingCategory.Building || 
+                    thing.def.category == ThingCategory.Pawn ||
+                    thing.def.passability == Traversability.Impassable)
+                    return false;
+            }
 
-            // Avoidance logic
+            // Avoidance logic with cached exit position
             if (Props.useExitAvoidance)
             {
-                // Avoid cavern exit
-                var exitPosition = FindCavernExitPosition();
+                var exitPosition = GetCachedExitPosition();
                 if (exitPosition.IsValid && cell.DistanceTo(exitPosition) < Props.exitAvoidanceRadius)
                     return false;
             }
@@ -261,14 +272,28 @@ namespace MiningOverhaul
                     return false;
             }
 
-            // Check minimum distance from colonists
+            // Check minimum distance from colonists - optimized loop
             var colonists = map.mapPawns.FreeColonists;
-            if (colonists.Any(p => p.Position.DistanceTo(cell) < 8))
-                return false;
+            for (int i = 0; i < colonists.Count; i++)
+            {
+                if (colonists[i].Position.DistanceTo(cell) < 8)
+                    return false;
+            }
 
             return true;
         }
 
+        // NEW: Cached exit position to avoid repeated expensive searches
+        private IntVec3 GetCachedExitPosition()
+        {
+            if (Find.TickManager.TicksGame > lastExitPositionCheck + EXIT_POSITION_CACHE_INTERVAL)
+            {
+                cachedExitPosition = FindCavernExitPosition();
+                lastExitPositionCheck = Find.TickManager.TicksGame;
+            }
+            return cachedExitPosition;
+        }
+        
         private IntVec3 FindCavernExitPosition()
         {
             var pocketMap = CavernEntrance?.GetPocketMap();
@@ -416,25 +441,45 @@ namespace MiningOverhaul
             return Mathf.Max(1, Mathf.RoundToInt(randomCount));
         }
 
+        // OPTIMIZED: Don't re-validate all cells synchronously at spawn time
         private IntVec3 ChooseSpawnCell(CreatureSpawnConfig config, List<Pawn> alreadySpawned)
         {
-            var availableCells = validSpawnCells.Where(cell => IsValidSpawnCell(cell)).ToList();
-
-            if (availableCells.Count == 0)
+            if (validSpawnCells.Count == 0)
                 return IntVec3.Invalid;
 
             // Try to spawn near already spawned creatures if within radius
             if (alreadySpawned.Count > 0 && config.spawnRadius > 0)
             {
                 var centerPoint = alreadySpawned[0].Position;
-                var nearbySpawnCells = availableCells.Where(cell => 
-                    cell.DistanceTo(centerPoint) <= config.spawnRadius).ToList();
+                
+                // Quick validation of a few nearby cells (max 10 to prevent lag)
+                int maxChecks = Math.Min(10, validSpawnCells.Count);
+                var nearbyCells = validSpawnCells
+                    .Where(cell => cell.DistanceTo(centerPoint) <= config.spawnRadius)
+                    .Take(maxChecks)
+                    .ToList();
 
-                if (nearbySpawnCells.Count > 0)
-                    return nearbySpawnCells.RandomElement();
+                // Quick validation of just the nearby cells
+                foreach (var cell in nearbyCells)
+                {
+                    if (IsValidSpawnCell(cell))
+                        return cell;
+                }
             }
 
-            return availableCells.RandomElement();
+            // Fall back to checking a few random cells from the pre-validated list
+            int attempts = 0;
+            while (attempts < 5 && validSpawnCells.Count > 0)
+            {
+                var randomCell = validSpawnCells.RandomElement();
+                if (IsValidSpawnCell(randomCell))
+                    return randomCell;
+                
+                attempts++;
+            }
+
+            // Last resort: return any cell from validated list (may be slightly stale but better than lag)
+            return validSpawnCells.Count > 0 ? validSpawnCells.RandomElement() : IntVec3.Invalid;
         }
 
         private Pawn SpawnCreature(PawnKindDef pawnKindDef, IntVec3 spawnCell)
