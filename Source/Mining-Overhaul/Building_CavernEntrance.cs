@@ -18,8 +18,10 @@ namespace MiningOverhaul
         private const int AcceleratedCollapseInterval = 60; // Faster blocking during collapse (was 15 - too aggressive)
         
         // Performance optimization constants
-        private const int CELLS_PER_REFRESH = 25; // Process this many cells per tick (reduced from 50)
-        private const int CELLS_PER_VALIDATION = 10; // Validate this many cells per tick (reduced from 20)
+        private const int CELLS_PER_REFRESH = 25; // Process this many cells per tick during normal operation
+        private const int CELLS_PER_VALIDATION = 10; // Validate this many cells per tick during normal operation
+        private const int COLLAPSE_CELLS_PER_REFRESH = 75; // Faster processing during collapse
+        private const int COLLAPSE_CELLS_PER_VALIDATION = 30; // Faster validation during collapse
         private const int CACHE_REFRESH_INTERVAL = 300; // Refresh cache every 5 seconds
         #endregion
 
@@ -520,7 +522,9 @@ namespace MiningOverhaul
                 InitializeCellsArray();
             }
 
-            int endIndex = Mathf.Min(refreshIndex + CELLS_PER_REFRESH, allCellsCount);
+            // Use different refresh rates based on collapse state
+            int refreshRate = isCollapsing ? COLLAPSE_CELLS_PER_REFRESH : CELLS_PER_REFRESH;
+            int endIndex = Mathf.Min(refreshIndex + refreshRate, allCellsCount);
 
             // Process a chunk of cells this tick using cached array (O(1) access)
             for (int i = refreshIndex; i < endIndex; i++)
@@ -616,8 +620,9 @@ namespace MiningOverhaul
                 return;
             }
             
-            // Only validate a few cells per tick to spread the load
-            int cellsToValidate = Mathf.Min(CELLS_PER_VALIDATION, blockableCells.Count - validationIndex);
+            // Use different validation rates based on collapse state
+            int validationRate = isCollapsing ? COLLAPSE_CELLS_PER_VALIDATION : CELLS_PER_VALIDATION;
+            int cellsToValidate = Mathf.Min(validationRate, blockableCells.Count - validationIndex);
             var cellsToRemove = new List<IntVec3>();
             
             // Check validity without removing items yet
@@ -748,7 +753,53 @@ namespace MiningOverhaul
         {
             if (blockableCells.Count == 0) return IntVec3.Invalid;
 
-            // TODO: Add strategic logic (narrow passages, important areas, etc.)
+            // Strategic collapse patterns based on collapse state
+            if (isCollapsing)
+            {
+                // During full collapse: prioritize cells near center for realistic cave-in
+                return ChooseCenterWeightedCell();
+            }
+            else
+            {
+                // During partial collapse: random pattern with some edge preference
+                return ChooseEdgeWeightedCell();
+            }
+        }
+        
+        private IntVec3 ChooseCenterWeightedCell()
+        {
+            if (!base.PocketMapExists || pocketMap == null) 
+                return blockableCells.RandomElement();
+                
+            var mapCenter = pocketMap.Center;
+            
+            // Find cells closest to center (cave-in effect)
+            var centerCells = blockableCells
+                .OrderBy(cell => cell.DistanceToSquared(mapCenter))
+                .Take(Mathf.Min(20, blockableCells.Count))
+                .ToList();
+                
+            return centerCells.Count > 0 ? centerCells.RandomElement() : blockableCells.RandomElement();
+        }
+        
+        private IntVec3 ChooseEdgeWeightedCell()
+        {
+            if (!base.PocketMapExists || pocketMap == null) 
+                return blockableCells.RandomElement();
+                
+            var mapCenter = pocketMap.Center;
+            
+            // 70% chance for edge cells (realistic partial collapse), 30% random
+            if (Rand.Chance(0.7f))
+            {
+                var edgeCells = blockableCells
+                    .OrderByDescending(cell => cell.DistanceToSquared(mapCenter))
+                    .Take(Mathf.Min(15, blockableCells.Count))
+                    .ToList();
+                    
+                return edgeCells.Count > 0 ? edgeCells.RandomElement() : blockableCells.RandomElement();
+            }
+            
             return blockableCells.RandomElement();
         }
         #endregion
