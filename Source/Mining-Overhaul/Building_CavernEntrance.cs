@@ -560,7 +560,18 @@ namespace MiningOverhaul
             // Check for blocking things - optimized loop
             if (HasImpassableThings(cell)) return false;
             
-            // Avoidance logic (quick distance checks using squared distance to avoid sqrt)
+            // During collapse, avoid exit area but allow any other walkable cell
+            if (isCollapsing)
+            {
+                // Only avoid the immediate exit area during final collapse
+                if (caveExitPosition.IsValid && cell.DistanceToSquared(caveExitPosition) < 4) // 2*2 around exit
+                    return false;
+                    
+                // Any other walkable cell is fair game during collapse
+                return true;
+            }
+            
+            // During partial collapse, use normal avoidance logic
             if (useCenterAvoidance)
             {
                 if (cell.DistanceToSquared(pocketMap.Center) < centerAvoidanceRange * centerAvoidanceRange) 
@@ -572,7 +583,7 @@ namespace MiningOverhaul
                     return false;
             }
             
-            // Most expensive check last - use caching
+            // Most expensive check last - use caching (only during partial collapse)
             return HasAdjacentRock(cell);
         }
 
@@ -691,16 +702,48 @@ namespace MiningOverhaul
             int collapseCheckInterval = isCollapsing ? 3 : 10;
             if (currentTick % collapseCheckInterval == 0)
             {
-                // Only trigger final collapse if we've completed a full refresh and found no cells
-                if (blockableCells.Count == 0 && hasCompletedFullRefresh)
+                // During collapse: trigger final destruction when cave is mostly filled
+                if (isCollapsing)
                 {
-                    if (isCollapsing)
+                    // Count remaining walkable cells
+                    int totalWalkableCells = 0;
+                    int walkableCellsNearExit = 0;
+                    
+                    if (allCellsArray != null)
                     {
-                        MOLog.Message("Cave completely filled - triggering final collapse");
+                        for (int i = 0; i < allCellsCount; i++)
+                        {
+                            IntVec3 cell = allCellsArray[i];
+                            if (cell.Walkable(pocketMap))
+                            {
+                                totalWalkableCells++;
+                                
+                                // Count cells near exit (keep some open for escape)
+                                if (caveExitPosition.IsValid && cell.DistanceToSquared(caveExitPosition) < 16) // 4x4 around exit
+                                {
+                                    walkableCellsNearExit++;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Trigger final collapse when less than 20% of cave remains walkable
+                    // OR when we can't find blockable cells despite having walkable space
+                    if (totalWalkableCells < (allCellsCount * 0.2f) || 
+                        (blockableCells.Count == 0 && hasCompletedFullRefresh && totalWalkableCells > walkableCellsNearExit))
+                    {
+                        MOLog.Message($"Cave collapse complete - {totalWalkableCells}/{allCellsCount} cells remaining, triggering final destruction");
                         Collapse();
                         return;
                     }
-                    // If not collapsing yet, just wait - we might find more cells as things change
+                }
+                else
+                {
+                    // During partial collapse: only check if we've run out of valid cells
+                    if (blockableCells.Count == 0 && hasCompletedFullRefresh)
+                    {
+                        // If not collapsing yet, just wait - we might find more cells as things change
+                    }
                 }
             }
 
