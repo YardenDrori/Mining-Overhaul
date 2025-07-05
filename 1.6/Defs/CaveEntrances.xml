@@ -47,6 +47,104 @@
         <filthDef>Filth_LooseGround</filthDef>
         <thickness>5</thickness>
         </li>
+        <li Class="MiningOverhaul.CompProperties_CavernCreatureSpawner">
+            <exitAvoidanceRadius>6</exitAvoidanceRadius>
+            <centerAvoidanceRadius>4</centerAvoidanceRadius>
+            <useExitAvoidance>true</useExitAvoidance>
+            <debugMode>false</debugMode>
+            <spawnConfigs>
+                <!-- Early stability loss (0-25%) - Harmless creatures -->
+                <li>
+                    <label>Cave Rats</label>
+                    <creatureDefNames>
+                        <li>Rat</li>
+                        <li>Squirrel</li>
+                    </creatureDefNames>
+                    <baseSpawnCountRange>2~4</baseSpawnCountRange>           <!-- Count at 50% instability -->
+                    <baseSpawnFrequencyDays>3.0</baseSpawnFrequencyDays>    <!-- Frequency at 50% instability -->
+                    <instabilityScalingFactor>0.8</instabilityScalingFactor> <!-- Low scaling for harmless creatures -->
+                    <spawnChance>0.7</spawnChance>
+                    <minStabilityLoss>0.0</minStabilityLoss>
+                    <maxStabilityLoss>0.25</maxStabilityLoss>
+                    <spawnRadius>3</spawnRadius>
+                    <manhunterChance>0.0</manhunterChance>                   <!-- No manhunters for harmless creatures -->
+                    <spawnEffects>
+                        <li>ImpactSmallDustCloud</li>
+                    </spawnEffects>
+                </li>
+                
+                <!-- Medium stability loss (25-50%) - Small predators -->
+                <li>
+                    <label>Cave Foxes</label>
+                    <creatureDefNames>
+                        <li>Fox_Red</li>
+                        <li>Fox_Fennec</li>
+                    </creatureDefNames>
+                    <baseSpawnCountRange>1~2</baseSpawnCountRange>           <!-- Count at 50% instability -->
+                    <baseSpawnFrequencyDays>2.5</baseSpawnFrequencyDays>    <!-- Frequency at 50% instability -->
+                    <instabilityScalingFactor>1.0</instabilityScalingFactor> <!-- Normal scaling -->
+                    <spawnChance>0.6</spawnChance>
+                    <minStabilityLoss>0.25</minStabilityLoss>
+                    <maxStabilityLoss>0.5</maxStabilityLoss>
+                    <spawnRadius>2</spawnRadius>
+                    <manhunterChance>0.3</manhunterChance>                   <!-- 30% chance for manhunters -->
+                    <spawnEffects>
+                        <li>ImpactSmallDustCloud</li>
+                        <li>UndercaveCeilingDebris</li>
+                    </spawnEffects>
+                </li>
+                
+                <!-- High stability loss (50-75%) - Dangerous creatures -->
+                <li>
+                    <label>Cave Bears</label>
+                    <creatureDefNames>
+                        <li>Bear_Grizzly</li>
+                        <li>Bear_Polar</li>
+                    </creatureDefNames>
+                    <baseSpawnCountRange>1~2</baseSpawnCountRange>           <!-- Count at 50% instability -->
+                    <baseSpawnFrequencyDays>2.0</baseSpawnFrequencyDays>    <!-- Frequency at 50% instability -->
+                    <instabilityScalingFactor>1.5</instabilityScalingFactor> <!-- Higher scaling for dangerous creatures -->
+                    <spawnChance>0.5</spawnChance>
+                    <minStabilityLoss>0.5</minStabilityLoss>
+                    <maxStabilityLoss>0.75</maxStabilityLoss>
+                    <spawnRadius>4</spawnRadius>
+                    <manhunterChance>0.6</manhunterChance>                   <!-- 60% chance for manhunters -->
+                    <spawnEffects>
+                        <li>ImpactDustCloud</li>
+                        <li>UndercaveCeilingDebris</li>
+                    </spawnEffects>
+                    <spawnSounds>
+                        <li>Pawn_Bear_Injured</li>
+                    </spawnSounds>
+                </li>
+                
+                <!-- Critical stability loss (75-100%) - Insectoid swarms -->
+                <li>
+                    <label>Disturbed Insects</label>
+                    <creatureDefNames>
+                        <li>Megaspider</li>
+                        <li>Spelopede</li>
+                        <li>Megascarab</li>
+                    </creatureDefNames>
+                    <baseSpawnCountRange>2~4</baseSpawnCountRange>           <!-- Count at 50% instability -->
+                    <baseSpawnFrequencyDays>1.5</baseSpawnFrequencyDays>    <!-- Frequency at 50% instability -->
+                    <instabilityScalingFactor>2.0</instabilityScalingFactor> <!-- Maximum scaling for swarms -->
+                    <spawnChance>0.8</spawnChance>
+                    <minStabilityLoss>0.75</minStabilityLoss>
+                    <maxStabilityLoss>1.0</maxStabilityLoss>
+                    <spawnRadius>5</spawnRadius>
+                    <manhunterChance>0.9</manhunterChance>                   <!-- 90% chance for manhunters -->
+                    <spawnEffects>
+                        <li>ImpactDustCloud</li>
+                        <li>UndercaveCeilingDebris</li>
+                        <li>UndercaveMapAmbience</li>
+                    </spawnEffects>
+                    <spawnSounds>
+                        <li>Insect_Hive_Spawn</li>
+                    </spawnSounds>
+                </li>
+            </spawnConfigs>
+        </li>
     </comps>
     </ThingDef>
 

@@ -1,31 +1,26 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RimWorld\\Mods\\Mining-Overhaul\\Source\\Mining-Overhaul\\Mining-Overhaul.csproj": {}
+    "/Users/yardendrori/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Mods/Mining-Overhaul/Source/Mining-Overhaul/Mining-Overhaul.csproj": {}
   },
   "projects": {
-    "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RimWorld\\Mods\\Mining-Overhaul\\Source\\Mining-Overhaul\\Mining-Overhaul.csproj": {
+    "/Users/yardendrori/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Mods/Mining-Overhaul/Source/Mining-Overhaul/Mining-Overhaul.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RimWorld\\Mods\\Mining-Overhaul\\Source\\Mining-Overhaul\\Mining-Overhaul.csproj",
+        "projectUniqueName": "/Users/yardendrori/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Mods/Mining-Overhaul/Source/Mining-Overhaul/Mining-Overhaul.csproj",
         "projectName": "Mining-Overhaul",
-        "projectPath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RimWorld\\Mods\\Mining-Overhaul\\Source\\Mining-Overhaul\\Mining-Overhaul.csproj",
-        "packagesPath": "C:\\Users\\Jordan\\.nuget\\packages\\",
-        "outputPath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RimWorld\\Mods\\Mining-Overhaul\\Source\\Mining-Overhaul\\obj\\",
+        "projectPath": "/Users/yardendrori/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Mods/Mining-Overhaul/Source/Mining-Overhaul/Mining-Overhaul.csproj",
+        "packagesPath": "/Users/yardendrori/.nuget/packages/",
+        "outputPath": "/Users/yardendrori/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Mods/Mining-Overhaul/Source/Mining-Overhaul/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Jordan\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/yardendrori/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net472"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "/opt/homebrew/Cellar/dotnet/9.0.6/libexec/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -44,7 +39,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.200"
+        "SdkAnalysisLevel": "9.0.100"
       },
       "frameworks": {
         "net472": {
@@ -57,9 +52,15 @@
             "Lib.Harmony": {
               "target": "Package",
               "version": "[2.3.6, )"
+            },
+            "Microsoft.NETFramework.ReferenceAssemblies": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[1.0.3, )",
+              "autoReferenced": true
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.203\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/opt/homebrew/Cellar/dotnet/9.0.6/libexec/sdk/9.0.107/RuntimeIdentifierGraph.json"
         }
       }
     }

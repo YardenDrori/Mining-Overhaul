@@ -1,11 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "s8i4e2d7oQo=",
+  "dgSpecHash": "Q8mbmt2zFo0=",
   "success": true,
-  "projectFilePath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RimWorld\\Mods\\Mining-Overhaul\\Source\\Mining-Overhaul\\Mining-Overhaul.csproj",
+  "projectFilePath": "/Users/yardendrori/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Mods/Mining-Overhaul/Source/Mining-Overhaul/Mining-Overhaul.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\Jordan\\.nuget\\packages\\krafs.rimworld.ref\\1.6.4491-beta\\krafs.rimworld.ref.1.6.4491-beta.nupkg.sha512",
-    "C:\\Users\\Jordan\\.nuget\\packages\\lib.harmony\\2.3.6\\lib.harmony.2.3.6.nupkg.sha512"
+    "/Users/yardendrori/.nuget/packages/krafs.rimworld.ref/1.6.4491-beta/krafs.rimworld.ref.1.6.4491-beta.nupkg.sha512",
+    "/Users/yardendrori/.nuget/packages/lib.harmony/2.3.6/lib.harmony.2.3.6.nupkg.sha512",
+    "/Users/yardendrori/.nuget/packages/microsoft.netframework.referenceassemblies/1.0.3/microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512",
+    "/Users/yardendrori/.nuget/packages/microsoft.netframework.referenceassemblies.net472/1.0.3/microsoft.netframework.referenceassemblies.net472.1.0.3.nupkg.sha512"
   ],
   "logs": []
 }
