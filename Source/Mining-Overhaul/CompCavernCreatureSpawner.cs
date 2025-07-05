@@ -43,9 +43,10 @@ namespace MiningOverhaul
         private Dictionary<CreatureSpawnConfig, int> nextSpawnTicks = new Dictionary<CreatureSpawnConfig, int>();
         private List<IntVec3> validSpawnCells = new List<IntVec3>();
         private int lastValidationTick = -999999;
-        private const int VALIDATION_INTERVAL = 600; // Revalidate every 10 seconds
-        private const int CELLS_PER_VALIDATION = 25; // Process cells incrementally
+        private const int VALIDATION_INTERVAL = 3600; // Revalidate every 60 seconds (was 10)
+        private const int CELLS_PER_VALIDATION = 50; // Process more cells per tick (was 25)
         private int validationIndex = 0;
+        private bool hasInitialValidation = false;
 
         public CompProperties_CavernCreatureSpawner Props => (CompProperties_CavernCreatureSpawner)props;
 
@@ -126,6 +127,12 @@ namespace MiningOverhaul
 
         private bool ShouldUpdateValidCells()
         {
+            // Force initial validation when pocket map first exists
+            if (!hasInitialValidation && CavernEntrance?.PocketMapExists == true)
+            {
+                return true;
+            }
+            
             return Find.TickManager.TicksGame >= lastValidationTick + VALIDATION_INTERVAL;
         }
 
@@ -167,10 +174,17 @@ namespace MiningOverhaul
                 validationIndex = 0;
                 lastValidationTick = Find.TickManager.TicksGame;
                 
-                if (Props.debugMode)
+                // Only log when there's an issue or first time
+                if (Props.debugMode && validSpawnCells.Count == 0)
                 {
-                    MOLog.Message($"CompCavernCreatureSpawner: Found {validSpawnCells.Count} valid spawn cells");
+                    MOLog.Warning($"CompCavernCreatureSpawner: No valid spawn cells found after full validation");
                 }
+                else if (Props.debugMode && !hasInitialValidation)
+                {
+                    MOLog.Message($"CompCavernCreatureSpawner: Initial validation complete - {validSpawnCells.Count} valid spawn cells");
+                }
+                
+                hasInitialValidation = true;
             }
         }
 
@@ -493,6 +507,7 @@ namespace MiningOverhaul
             Scribe_Collections.Look(ref validSpawnCells, "validSpawnCells", LookMode.Value);
             Scribe_Values.Look(ref lastValidationTick, "lastValidationTick", -999999);
             Scribe_Values.Look(ref validationIndex, "validationIndex", 0);
+            Scribe_Values.Look(ref hasInitialValidation, "hasInitialValidation", false);
 
             if (validSpawnCells == null)
                 validSpawnCells = new List<IntVec3>();

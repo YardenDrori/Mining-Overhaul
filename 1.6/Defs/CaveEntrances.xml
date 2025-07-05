@@ -77,7 +77,7 @@
                         <li>Squirrel</li>
                     </creatureDefNames>
                     <baseSpawnCountRange>2~4</baseSpawnCountRange>           <!-- Count at 50% instability -->
-                    <baseSpawnFrequencyDays>3.0</baseSpawnFrequencyDays>    <!-- Frequency at 50% instability -->
+                    <baseSpawnFrequencyDays>0.1</baseSpawnFrequencyDays>    <!-- TESTING: Very fast spawning -->
                     <instabilityScalingFactor>0.8</instabilityScalingFactor> <!-- Low scaling for harmless creatures -->
                     <spawnChance>0.7</spawnChance>
                     <minStabilityLoss>0.0</minStabilityLoss>
