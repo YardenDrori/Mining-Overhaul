@@ -43,11 +43,15 @@ namespace MiningOverhaul
         // Collapse states
         private bool isPartiallyCollapsing = false;
         private bool isCollapsing = false;
+        private bool isDestroying = false; // Safety flag to prevent double destruction
         private int collapseTick = -999999;
         private IntVec3 caveExitPosition = IntVec3.Invalid;
 
         // Optimized partial collapse system
         private int lastPartialCollapseTick = -999999;
+        
+        // Track which pawns we've already logged forced collapse for (to prevent spam)
+        private HashSet<int> forcedCollapseLoggedPawns = new HashSet<int>();
         private List<IntVec3> blockableCells = new List<IntVec3>();
         private HashSet<IntVec3> blockableCellsSet = new HashSet<IntVec3>(); // For O(1) lookups
         
@@ -94,6 +98,7 @@ namespace MiningOverhaul
             // Collapse states
             Scribe_Values.Look(ref isPartiallyCollapsing, "isPartiallyCollapsing", false);
             Scribe_Values.Look(ref isCollapsing, "isCollapsing", false);
+            Scribe_Values.Look(ref isDestroying, "isDestroying", false);
             Scribe_Values.Look(ref collapseTick, "collapseTick", -999999);
 
             // Partial collapse data
@@ -116,10 +121,14 @@ namespace MiningOverhaul
             Scribe_Values.Look(ref lastIncidentTick, "lastIncidentTick", 0);
             Scribe_Values.Look(ref nextIncidentTick, "nextIncidentTick", 0);
 
+            // Forced collapse tracking
+            Scribe_Collections.Look(ref forcedCollapseLoggedPawns, "forcedCollapseLoggedPawns", LookMode.Value);
+
             // Initialize collections if null after loading
             if (blockableCells == null) blockableCells = new List<IntVec3>();
             if (blockableCellsSet == null) blockableCellsSet = new HashSet<IntVec3>(blockableCells);
             if (adjacentRockCache == null) adjacentRockCache = new Dictionary<IntVec3, bool>();
+            if (forcedCollapseLoggedPawns == null) forcedCollapseLoggedPawns = new HashSet<int>();
         }
 
         public override void SpawnSetup(Map map, bool respawningAfterLoad)
@@ -141,13 +150,13 @@ namespace MiningOverhaul
         {
             base.Tick();
 
+            // Always handle stability degradation to allow instability to continue increasing
+            // past 100% for the forced collapse mechanism at 150%
+            HandleStabilityDegradation();
+
             if (isCollapsing)
             {
                 HandleCollapsingState();
-            }
-            else
-            {
-                HandleStabilityDegradation();
             }
 
             // Check for powered buildings periodically
@@ -250,8 +259,8 @@ namespace MiningOverhaul
                 lastPartialCollapseTick = Find.TickManager.TicksGame;
             }
 
-            // Begin full collapse at 100%
-            if (stabilityPercent >= 1.0f)
+            // Begin full collapse at 100% (but only trigger once)
+            if (stabilityPercent >= 1.0f && !isCollapsing)
             {
                 BeginCollapse();
             }
@@ -260,12 +269,24 @@ namespace MiningOverhaul
         // NEW: Method to handle entrance-only collapse when no pocket map exists
         private void CollapseEntrance()
         {
-            // Sound effects on the surface
-            SoundDefOf.PitGateCollapsing_End.PlayOneShot(new TargetInfo(base.Position, base.Map));
+            // Safety check to prevent double destruction
+            if (isDestroying || Destroyed)
+            {
+                return;
+            }
             
-            // Visual effect at entrance
-            EffecterDefOf.ImpactDustCloud.Spawn(base.Position, base.Map).Cleanup();
-            Find.CameraDriver.shaker.DoShake(0.1f);
+            // Mark that we're beginning destruction
+            isDestroying = true;
+            
+            // Sound effects on the surface (only if map still exists)
+            if (base.Map != null)
+            {
+                SoundDefOf.PitGateCollapsing_End.PlayOneShot(new TargetInfo(base.Position, base.Map));
+                
+                // Visual effect at entrance
+                EffecterDefOf.ImpactDustCloud.Spawn(base.Position, base.Map).Cleanup();
+                Find.CameraDriver.shaker.DoShake(0.1f);
+            }
             
             MOLog.Message("Cave entrance collapsed before anyone entered");
             
@@ -668,7 +689,7 @@ namespace MiningOverhaul
 
             IntVec3 cellToBlock = ChooseStrategicCellToBlock();
 
-            if (cellToBlock != IntVec3.Invalid)
+            if (cellToBlock != IntVec3.Invalid && CanSpawnRockAt(cellToBlock))
             {
                 // Spawn blocking rock
                 GenSpawn.Spawn(ThingDef.Named("MO_WeakRock"), cellToBlock, pocketMap);
@@ -707,6 +728,49 @@ namespace MiningOverhaul
             }
         }
 
+        // NEW: Check if it's safe to spawn a rock at this position (no living creatures)
+        private bool CanSpawnRockAt(IntVec3 cell)
+        {
+            // Don't spawn rocks on living creatures - give them a chance to escape!
+            var thingsAtCell = cell.GetThingList(pocketMap);
+            foreach (var thing in thingsAtCell)
+            {
+                if (thing is Pawn pawn && !pawn.Dead)
+                {
+                    // However, if we're WAY past collapse point (150%+), crush the pawn
+                    // This prevents infinite caves when pawns refuse to leave
+                    float stabilityPercent = GetStabilityPercent();
+                    if (stabilityPercent >= 1.5f) // 150% instability = forced collapse
+                    {
+                        // Only log once per pawn to avoid spam
+                        if (!HasLoggedForcedCollapseFor(pawn))
+                        {
+                            MOLog.Message($"Cave WAY past collapse point ({stabilityPercent:P0}) - {pawn.NameShortColored} crushed by falling rocks");
+                            MarkForcedCollapseLogged(pawn);
+                        }
+                        
+                        // Crush the pawn dramatically - guaranteed death
+                        pawn.Kill(new DamageInfo(DamageDefOf.Crush, 9999f), null);
+                        
+                        return true; // Continue with rock placement
+                    }
+                    return false; // Living creature here, skip this cell (for now)
+                }
+            }
+            return true; // Safe to spawn rock
+        }
+
+        // Helper methods for tracking logged pawns to prevent spam
+        private bool HasLoggedForcedCollapseFor(Pawn pawn)
+        {
+            return forcedCollapseLoggedPawns.Contains(pawn.thingIDNumber);
+        }
+        
+        private void MarkForcedCollapseLogged(Pawn pawn)
+        {
+            forcedCollapseLoggedPawns.Add(pawn.thingIDNumber);
+        }
+
         private IntVec3 ChooseStrategicCellToBlock()
         {
             if (blockableCells.Count == 0) return IntVec3.Invalid;
@@ -719,6 +783,12 @@ namespace MiningOverhaul
         #region Full Collapse System
         private void HandleCollapsingState()
         {
+            // Safety check to prevent double destruction
+            if (isDestroying || Destroyed)
+            {
+                return;
+            }
+            
             // Only check stabilizer if pocket map exists
             if (pocketMap != null && CompCavernStabilizer.HasStabilizerCondition(pocketMap))
             {
@@ -767,6 +837,15 @@ namespace MiningOverhaul
 
         public void Collapse()
         {
+            // Safety check to prevent double destruction
+            if (isDestroying || Destroyed)
+            {
+                return;
+            }
+            
+            // Mark that we're beginning destruction
+            isDestroying = true;
+            
             // Sound effects
             if (Find.CurrentMap == pocketMap)
             {

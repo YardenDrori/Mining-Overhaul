@@ -328,9 +328,12 @@ namespace MiningOverhaul
 
         private int CalculateSpawnCount(ThreatTier tier, float currentInstability)
         {
+            // Allow instability >100% but cap spawning effectiveness at 100%
+            float spawnInstability = Mathf.Min(currentInstability, 1f);
+            
             // Simple logarithmic scaling: 0% = 0 spawns, 100% = max spawns
             // Logarithmic curve provides fast early ramp, controlled late game
-            float scaledInstability = Mathf.Log(1 + currentInstability * ((float)Math.E - 1));
+            float scaledInstability = Mathf.Log(1 + spawnInstability * ((float)Math.E - 1));
             
             // Find the config this tier belongs to for the multiplier
             float multiplier = 1f;
