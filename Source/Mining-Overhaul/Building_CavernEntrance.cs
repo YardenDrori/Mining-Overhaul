@@ -312,6 +312,9 @@ namespace MiningOverhaul
             }
         }
 
+        // Public property for creature spawner access
+        public float StabilityLoss => GetStabilityPercent();
+        
         private float GetStabilityPercent()
         {
             return (float)stabilityLost / StabilityDurationTicks;

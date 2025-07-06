@@ -9,28 +9,36 @@ using Verse.Sound;
 namespace MiningOverhaul
 {
     [System.Serializable]
-    public class CreatureSpawnConfig
+    public class CreatureOption
+    {
+        public string creatureDef;
+        public float weight = 1f;
+        public float manhunterChance = 0f;
+    }
+
+    [System.Serializable]
+    public class ThreatTier
+    {
+        public float minInstability = 0f;
+        public float maxInstability = 1f;
+        public List<CreatureOption> creatures = new List<CreatureOption>();
+        public float maxCreaturesSpawned = 1f;
+        public float spawnIntervalHours = 2f;
+        public float spawnChance = 1f;
+    }
+
+    [System.Serializable]
+    public class SimpleCreatureSpawn
     {
         public string label = "Spawn Group";
-        public List<string> creatureDefNames = new List<string>();
-        public FloatRange baseSpawnCountRange = new FloatRange(1, 3);  // Count at 50% instability
-        public float baseSpawnFrequencyHours = 1.0f;                  // Frequency at 50% instability (in hours)
-        public float instabilityScalingFactor = 1.0f;                 // How much instability affects frequency/count
-        public float spawnChance = 1.0f;
-        public float minStabilityLoss = 0.0f;
-        public float maxStabilityLoss = 1.0f;
-        public int spawnRadius = 2;
-        public float manhunterChance = 0.0f;                          // Chance for spawned creatures to be manhunters
-        public List<string> spawnEffects = new List<string>();
-        public List<string> spawnSounds = new List<string>();
+        public List<ThreatTier> threatTiers = new List<ThreatTier>();
+        public float instabilityMultiplier = 1f;
     }
 
     public class CompProperties_CavernCreatureSpawner : CompProperties
     {
-        public List<CreatureSpawnConfig> spawnConfigs = new List<CreatureSpawnConfig>();
-        public int exitAvoidanceRadius = 5;
-        public int centerAvoidanceRadius = 3;
-        public bool useExitAvoidance = true;
+        public List<SimpleCreatureSpawn> spawnConfigs = new List<SimpleCreatureSpawn>();
+        public int avoidanceRadius = 5;
         public bool debugMode = false;
 
         public CompProperties_CavernCreatureSpawner()
@@ -41,22 +49,10 @@ namespace MiningOverhaul
 
     public class CompCavernCreatureSpawner : ThingComp
     {
-        private Dictionary<CreatureSpawnConfig, int> nextSpawnTicks = new Dictionary<CreatureSpawnConfig, int>();
+        private Dictionary<ThreatTier, int> nextSpawnTicks = new Dictionary<ThreatTier, int>();
         private List<IntVec3> validSpawnCells = new List<IntVec3>();
         private int lastValidationTick = -999999;
         private const int VALIDATION_INTERVAL = 3600; // Revalidate every 60 seconds
-        private const int CELLS_PER_VALIDATION = 25; // Process fewer cells per tick to prevent lag
-        private int validationIndex = 0;
-        private bool hasInitialValidation = false;
-        
-        // NEW: Cache expensive AllCells collection
-        private IntVec3[] allCellsArray = null;
-        private int allCellsCount = 0;
-        
-        // NEW: Cache exit position to avoid repeated searches
-        private IntVec3 cachedExitPosition = IntVec3.Invalid;
-        private int lastExitPositionCheck = -999999;
-        private const int EXIT_POSITION_CACHE_INTERVAL = 600; // 10 seconds
 
         public CompProperties_CavernCreatureSpawner Props => (CompProperties_CavernCreatureSpawner)props;
 
@@ -69,13 +65,6 @@ namespace MiningOverhaul
             {
                 MOLog.Message($"CompCavernCreatureSpawner: Component spawned, {Props.spawnConfigs.Count} configs loaded - waiting for pocket map");
             }
-            // Don't initialize timers until pocket map exists
-            
-            // Initialize cached arrays when pocket map becomes available
-            if (CavernEntrance?.PocketMapExists == true)
-            {
-                InitializeCellsArray();
-            }
         }
 
         private void InitializeSpawnTicks()
@@ -83,10 +72,13 @@ namespace MiningOverhaul
             nextSpawnTicks.Clear();
             foreach (var config in Props.spawnConfigs)
             {
-                CalculateNextSpawnTick(config);
-                if (Props.debugMode)
+                foreach (var tier in config.threatTiers)
                 {
-                    MOLog.Message($"CompCavernCreatureSpawner: Initialized timer for {config.label}");
+                    CalculateNextSpawnTick(tier);
+                    if (Props.debugMode)
+                    {
+                        MOLog.Message($"CompCavernCreatureSpawner: Initialized timer for {config.label} tier {tier.minInstability:P0}-{tier.maxInstability:P0}");
+                    }
                 }
             }
         }
@@ -123,64 +115,40 @@ namespace MiningOverhaul
                 }
             }
             
-            // Initialize cached cells array if needed
-            if (allCellsArray == null)
-            {
-                InitializeCellsArray();
-            }
-
             // Update valid spawn cells periodically
             if (ShouldUpdateValidCells())
             {
                 UpdateValidSpawnCells();
             }
 
-            // Check each config for spawn timing
+            // Check each tier for spawn timing
             var currentTick = Find.TickManager.TicksGame;
-            var configsToSpawn = new List<CreatureSpawnConfig>();
-            
-            // Debug timer status every 10 seconds
-            if (Props.debugMode && currentTick % 600 == 0 && nextSpawnTicks.Count > 0)
-            {
-                MOLog.Message($"CompCavernCreatureSpawner: Timer check - Current tick: {currentTick}");
-                foreach (var kvp in nextSpawnTicks)
-                {
-                    var timeLeft = (kvp.Value - currentTick) / 60000f;
-                    MOLog.Message($"  {kvp.Key.label}: Next spawn in {timeLeft:F2} days (tick {kvp.Value})");
-                }
-            }
+            var tiersToSpawn = new List<ThreatTier>();
             
             foreach (var kvp in nextSpawnTicks.ToList())
             {
                 if (currentTick >= kvp.Value)
                 {
-                    configsToSpawn.Add(kvp.Key);
+                    tiersToSpawn.Add(kvp.Key);
                 }
             }
 
-            foreach (var config in configsToSpawn)
+            foreach (var tier in tiersToSpawn)
             {
                 if (Props.debugMode)
                 {
-                    MOLog.Message($"CompCavernCreatureSpawner: Timer triggered for {config.label}");
+                    MOLog.Message($"CompCavernCreatureSpawner: Timer triggered for tier {tier.minInstability:P0}-{tier.maxInstability:P0}");
                 }
-                TrySpawnCreatures(config);
-                CalculateNextSpawnTick(config);
+                TrySpawnCreatures(tier);
+                CalculateNextSpawnTick(tier);
             }
         }
 
         private bool ShouldUpdateValidCells()
         {
-            // Force initial validation when pocket map first exists
-            if (!hasInitialValidation && CavernEntrance?.PocketMapExists == true)
-            {
-                return true;
-            }
-            
             return Find.TickManager.TicksGame >= lastValidationTick + VALIDATION_INTERVAL;
         }
 
-        // OPTIMIZED: Use cached array instead of expensive AllCells.ToList()
         private void UpdateValidSpawnCells()
         {
             var pocketMap = CavernEntrance?.GetPocketMap();
@@ -190,109 +158,59 @@ namespace MiningOverhaul
                 return;
             }
 
-            // Initialize cached array if needed
-            if (allCellsArray == null)
+            validSpawnCells.Clear();
+            
+            foreach (IntVec3 cell in pocketMap.AllCells)
             {
-                InitializeCellsArray();
-            }
-
-            int endIndex = Mathf.Min(validationIndex + CELLS_PER_VALIDATION, allCellsCount);
-
-            // First pass: clear old cells if starting fresh
-            if (validationIndex == 0)
-            {
-                validSpawnCells.Clear();
-            }
-
-            // Process chunk of cells using cached array (O(1) access)
-            for (int i = validationIndex; i < endIndex; i++)
-            {
-                IntVec3 cell = allCellsArray[i];
                 if (IsValidSpawnCell(cell))
                 {
                     validSpawnCells.Add(cell);
                 }
             }
-
-            validationIndex = endIndex;
-
-            // Complete validation cycle
-            if (validationIndex >= allCellsCount)
+            
+            lastValidationTick = Find.TickManager.TicksGame;
+            
+            if (Props.debugMode)
             {
-                validationIndex = 0;
-                lastValidationTick = Find.TickManager.TicksGame;
-                
-                // Only log when there's an issue or first time
-                if (Props.debugMode && validSpawnCells.Count == 0)
-                {
-                    MOLog.Warning($"CompCavernCreatureSpawner: No valid spawn cells found after full validation");
-                }
-                else if (Props.debugMode && !hasInitialValidation)
-                {
-                    MOLog.Message($"CompCavernCreatureSpawner: Initial validation complete - {validSpawnCells.Count} valid spawn cells");
-                }
-                
-                hasInitialValidation = true;
+                MOLog.Message($"CompCavernCreatureSpawner: Updated spawn cells - {validSpawnCells.Count} valid positions");
             }
         }
 
-        // OPTIMIZED: Faster validation with caching and optimized loops
         private bool IsValidSpawnCell(IntVec3 cell)
         {
             var map = CavernEntrance?.GetPocketMap();
             if (map == null)
                 return false;
 
-            // Basic cell validation (cheap operations first)
+            // Basic cell validation
             if (!cell.InBounds(map) || !cell.Walkable(map) || cell.Fogged(map))
                 return false;
 
-            // Check for blocking things - optimized loop instead of LINQ
+            // Check for blocking things
             var thingList = cell.GetThingList(map);
-            for (int i = 0; i < thingList.Count; i++)
+            foreach (var thing in thingList)
             {
-                var thing = thingList[i];
                 if (thing.def.category == ThingCategory.Building || 
                     thing.def.category == ThingCategory.Pawn ||
                     thing.def.passability == Traversability.Impassable)
                     return false;
             }
 
-            // Avoidance logic with cached exit position
-            if (Props.useExitAvoidance)
-            {
-                var exitPosition = GetCachedExitPosition();
-                if (exitPosition.IsValid && cell.DistanceTo(exitPosition) < Props.exitAvoidanceRadius)
-                    return false;
-            }
-            else
-            {
-                // Avoid map center
-                if (cell.DistanceTo(map.Center) < Props.centerAvoidanceRadius)
-                    return false;
-            }
+            // Simple avoidance - stay away from exit and colonists
+            var exitPosition = FindCavernExitPosition();
+            if (exitPosition.IsValid && cell.DistanceTo(exitPosition) < Props.avoidanceRadius)
+                return false;
 
-            // Check minimum distance from colonists - optimized loop
-            var colonists = map.mapPawns.FreeColonists;
-            for (int i = 0; i < colonists.Count; i++)
+            // Check minimum distance from colonists
+            foreach (var colonist in map.mapPawns.FreeColonists)
             {
-                if (colonists[i].Position.DistanceTo(cell) < 8)
+                if (colonist.Position.DistanceTo(cell) < 8)
                     return false;
             }
 
             return true;
         }
 
-        // NEW: Cached exit position to avoid repeated expensive searches
-        private IntVec3 GetCachedExitPosition()
-        {
-            if (Find.TickManager.TicksGame > lastExitPositionCheck + EXIT_POSITION_CACHE_INTERVAL)
-            {
-                cachedExitPosition = FindCavernExitPosition();
-                lastExitPositionCheck = Find.TickManager.TicksGame;
-            }
-            return cachedExitPosition;
-        }
         
         private IntVec3 FindCavernExitPosition()
         {
@@ -311,182 +229,145 @@ namespace MiningOverhaul
             return pocketMap.Center;
         }
 
-        private void TrySpawnCreatures(CreatureSpawnConfig config)
+        private void TrySpawnCreatures(ThreatTier tier)
         {
             if (CavernEntrance == null || validSpawnCells.Count == 0)
             {
                 if (Props.debugMode)
                 {
-                    MOLog.Warning($"CompCavernCreatureSpawner: Cannot spawn {config.label} - CavernEntrance: {CavernEntrance != null}, ValidCells: {validSpawnCells.Count}");
+                    MOLog.Warning($"CompCavernCreatureSpawner: Cannot spawn - CavernEntrance: {CavernEntrance != null}, ValidCells: {validSpawnCells.Count}");
                 }
                 return;
             }
 
-            float currentStabilityLoss = GetCurrentStabilityLossPercent();
+            float currentInstability = GetCurrentInstabilityPercent();
             
-            if (Props.debugMode)
-            {
-                MOLog.Message($"CompCavernCreatureSpawner: {config.label} - Stability: {currentStabilityLoss:P1}, Range: {config.minStabilityLoss:P1}-{config.maxStabilityLoss:P1}");
-            }
-            
-            // Check if config is valid for current stability
-            if (currentStabilityLoss < config.minStabilityLoss || currentStabilityLoss > config.maxStabilityLoss)
+            // Check if tier is valid for current instability
+            if (currentInstability < tier.minInstability || currentInstability > tier.maxInstability)
             {
                 if (Props.debugMode)
                 {
-                    MOLog.Message($"CompCavernCreatureSpawner: {config.label} skipped - stability {currentStabilityLoss:P1} outside range {config.minStabilityLoss:P1}-{config.maxStabilityLoss:P1}");
+                    MOLog.Message($"CompCavernCreatureSpawner: Tier skipped - instability {currentInstability:P1} outside range {tier.minInstability:P1}-{tier.maxInstability:P1}");
                 }
                 return;
             }
 
-            if (!Rand.Chance(config.spawnChance))
+            // Roll spawn chance
+            if (!Rand.Chance(tier.spawnChance))
             {
                 if (Props.debugMode)
                 {
-                    MOLog.Message($"CompCavernCreatureSpawner: {config.label} failed spawn chance ({config.spawnChance:P1})");
+                    MOLog.Message($"CompCavernCreatureSpawner: Tier failed spawn chance ({tier.spawnChance:P1})");
                 }
                 return;
             }
 
             if (Props.debugMode)
             {
-                MOLog.Message($"CompCavernCreatureSpawner: {config.label} passed all checks - spawning creatures!");
+                MOLog.Message($"CompCavernCreatureSpawner: Spawning from tier {tier.minInstability:P0}-{tier.maxInstability:P0}!");
             }
 
-            SpawnCreaturesFromConfig(config, currentStabilityLoss);
+            SpawnCreaturesFromTier(tier, currentInstability);
         }
 
-        private float GetCurrentStabilityLossPercent()
+        private float GetCurrentInstabilityPercent()
         {
             if (CavernEntrance == null)
                 return 0f;
 
-            // Access the stability system from CavernEntrance
-            // Using reflection to access private GetStabilityPercent method
-            var method = typeof(CavernEntrance).GetMethod("GetStabilityPercent", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
-            if (method != null)
-            {
-                return (float)method.Invoke(CavernEntrance, null);
-            }
-
-            return 0f;
+            // Direct property access instead of reflection
+            return CavernEntrance.StabilityLoss;
         }
 
-        private void SpawnCreaturesFromConfig(CreatureSpawnConfig config, float currentStabilityLoss)
+        private void SpawnCreaturesFromTier(ThreatTier tier, float currentInstability)
         {
-            if (config.creatureDefNames.Count == 0 || validSpawnCells.Count == 0)
+            if (tier.creatures.Count == 0 || validSpawnCells.Count == 0)
                 return;
 
-            // Calculate scaled spawn count using the new scaling system
-            int spawnCount = CalculateScaledSpawnCount(config, currentStabilityLoss);
+            // Calculate spawn count using logarithmic scaling
+            int spawnCount = CalculateSpawnCount(tier, currentInstability);
             var spawnedPawns = new List<Pawn>();
 
             for (int i = 0; i < spawnCount; i++)
             {
-                // Pick a random creature type for EACH individual spawn
-                var chosenCreatureDef = config.creatureDefNames.RandomElement();
-                var pawnKindDef = DefDatabase<PawnKindDef>.GetNamedSilentFail(chosenCreatureDef);
+                // Pick creature using weights
+                var chosenCreature = tier.creatures.RandomElementByWeight(c => c.weight);
+                var pawnKindDef = DefDatabase<PawnKindDef>.GetNamedSilentFail(chosenCreature.creatureDef);
 
                 if (pawnKindDef == null)
                 {
                     if (Props.debugMode)
                     {
-                        MOLog.Warning($"CompCavernCreatureSpawner: Could not find PawnKindDef '{chosenCreatureDef}'");
+                        MOLog.Warning($"CompCavernCreatureSpawner: Could not find PawnKindDef '{chosenCreature.creatureDef}'");
                     }
-                    continue; // Skip this spawn but continue with others
+                    continue;
                 }
 
-                var spawnCell = ChooseSpawnCell(config, spawnedPawns);
+                var spawnCell = ChooseSpawnCell(spawnedPawns);
                 if (!spawnCell.IsValid)
                     continue;
 
                 var pawn = SpawnCreature(pawnKindDef, spawnCell);
                 if (pawn != null)
                 {
-                    // Apply manhunter mental state if chance succeeds
-                    if (config.manhunterChance > 0 && Rand.Chance(config.manhunterChance))
+                    // Apply manhunter using per-creature chance
+                    if (chosenCreature.manhunterChance > 0 && Rand.Chance(chosenCreature.manhunterChance))
                     {
                         ApplyManhunterState(pawn);
                     }
                     
                     spawnedPawns.Add(pawn);
-                    PlaySpawnEffects(config, spawnCell);
                 }
             }
 
             if (spawnedPawns.Count > 0)
             {
-                SendSpawnNotification(config, spawnedPawns);
+                SendSpawnNotification(spawnedPawns);
             }
         }
 
-        private int CalculateScaledSpawnCount(CreatureSpawnConfig config, float currentStabilityLoss)
+        private int CalculateSpawnCount(ThreatTier tier, float currentInstability)
         {
-            // TRUE SCALING: instabilityScalingFactor controls how much stability affects spawning
-            // At 50% instability, we want 1.0x multiplier (baseline)
-            // scalingFactor = 0.5 means stability has half effect
-            // scalingFactor = 2.0 means stability has double effect
+            // Simple logarithmic scaling: 0% = 0 spawns, 100% = max spawns
+            // Logarithmic curve provides fast early ramp, controlled late game
+            float scaledInstability = Mathf.Log(1 + currentInstability * ((float)Math.E - 1));
             
-            float baselineStability = 0.5f; // 50% instability = baseline
-            float stabilityDifference = currentStabilityLoss - baselineStability;
-            float scaledDifference = stabilityDifference * config.instabilityScalingFactor;
+            // Find the config this tier belongs to for the multiplier
+            float multiplier = 1f;
+            foreach (var config in Props.spawnConfigs)
+            {
+                if (config.threatTiers.Contains(tier))
+                {
+                    multiplier = config.instabilityMultiplier;
+                    break;
+                }
+            }
             
-            // Convert to multiplier: 50% = 1.0x, above/below scales with factor
-            float countMultiplier = 1.0f + scaledDifference;
+            float spawnRate = tier.maxCreaturesSpawned * scaledInstability * multiplier;
             
-            // Ensure minimum spawning and reasonable caps
-            countMultiplier = Mathf.Clamp(countMultiplier, 0.3f, 3.0f);
-            
-            // Apply multiplier to base count range
-            float scaledMin = config.baseSpawnCountRange.min * countMultiplier;
-            float scaledMax = config.baseSpawnCountRange.max * countMultiplier;
-            
-            // Get random value in scaled range and round up to ensure at least 1 creature
-            float randomCount = Rand.Range(scaledMin, scaledMax);
-            return Mathf.Max(1, Mathf.RoundToInt(randomCount));
+            // Ensure at least 1 creature if instability > 0
+            return currentInstability > 0f ? Mathf.Max(1, Mathf.RoundToInt(spawnRate)) : 0;
         }
 
-        // OPTIMIZED: Don't re-validate all cells synchronously at spawn time
-        private IntVec3 ChooseSpawnCell(CreatureSpawnConfig config, List<Pawn> alreadySpawned)
+        private IntVec3 ChooseSpawnCell(List<Pawn> alreadySpawned)
         {
             if (validSpawnCells.Count == 0)
                 return IntVec3.Invalid;
 
-            // Try to spawn near already spawned creatures if within radius
-            if (alreadySpawned.Count > 0 && config.spawnRadius > 0)
+            // Try to spawn near already spawned creatures (simple clustering)
+            if (alreadySpawned.Count > 0)
             {
                 var centerPoint = alreadySpawned[0].Position;
-                
-                // Quick validation of a few nearby cells (max 10 to prevent lag)
-                int maxChecks = Math.Min(10, validSpawnCells.Count);
                 var nearbyCells = validSpawnCells
-                    .Where(cell => cell.DistanceTo(centerPoint) <= config.spawnRadius)
-                    .Take(maxChecks)
+                    .Where(cell => cell.DistanceTo(centerPoint) <= 3)
                     .ToList();
 
-                // Quick validation of just the nearby cells
-                foreach (var cell in nearbyCells)
-                {
-                    if (IsValidSpawnCell(cell))
-                        return cell;
-                }
+                if (nearbyCells.Count > 0)
+                    return nearbyCells.RandomElement();
             }
 
-            // Fall back to checking a few random cells from the pre-validated list
-            int attempts = 0;
-            while (attempts < 5 && validSpawnCells.Count > 0)
-            {
-                var randomCell = validSpawnCells.RandomElement();
-                if (IsValidSpawnCell(randomCell))
-                    return randomCell;
-                
-                attempts++;
-            }
-
-            // Last resort: return any cell from validated list (may be slightly stale but better than lag)
-            return validSpawnCells.Count > 0 ? validSpawnCells.RandomElement() : IntVec3.Invalid;
+            // Fall back to any valid cell
+            return validSpawnCells.RandomElement();
         }
 
         private Pawn SpawnCreature(PawnKindDef pawnKindDef, IntVec3 spawnCell)
@@ -533,40 +414,8 @@ namespace MiningOverhaul
             }
         }
 
-        private void PlaySpawnEffects(CreatureSpawnConfig config, IntVec3 spawnCell)
-        {
-            var pocketMap = CavernEntrance?.GetPocketMap();
-            if (pocketMap == null)
-                return;
 
-            // Play visual effects
-            foreach (var effectName in config.spawnEffects)
-            {
-                var effectDef = DefDatabase<EffecterDef>.GetNamedSilentFail(effectName);
-                if (effectDef != null)
-                {
-                    effectDef.Spawn(spawnCell, pocketMap).Cleanup();
-                }
-            }
-
-            // Play sound effects
-            foreach (var soundName in config.spawnSounds)
-            {
-                var soundDef = DefDatabase<SoundDef>.GetNamedSilentFail(soundName);
-                if (soundDef != null)
-                {
-                    soundDef.PlayOneShot(new TargetInfo(spawnCell, pocketMap));
-                }
-            }
-
-            // Default effect if none specified
-            if (config.spawnEffects.Count == 0)
-            {
-                EffecterDefOf.ImpactSmallDustCloud.Spawn(spawnCell, pocketMap).Cleanup();
-            }
-        }
-
-        private void SendSpawnNotification(CreatureSpawnConfig config, List<Pawn> spawnedPawns)
+        private void SendSpawnNotification(List<Pawn> spawnedPawns)
         {
             if (spawnedPawns.Count == 0)
                 return;
@@ -581,19 +430,14 @@ namespace MiningOverhaul
                 }
                 else
                 {
-                    // Check if all creatures are the same type
                     var creatureTypes = spawnedPawns.Select(p => p.def.label).Distinct().ToList();
                     if (creatureTypes.Count == 1)
                     {
-                        // All same type
                         message = $"{spawnedPawns.Count} {creatureTypes[0]}s have emerged from the depths of the cavern.";
                     }
                     else
                     {
-                        // Mixed types - use config label or generic message
-                        message = spawnedPawns.Count <= 3 
-                            ? $"{string.Join(", ", spawnedPawns.Select(p => p.def.label))} have emerged from the depths of the cavern."
-                            : $"{spawnedPawns.Count} creatures from {config.label} have emerged from the depths of the cavern.";
+                        message = $"{spawnedPawns.Count} creatures have emerged from the depths of the cavern.";
                     }
                 }
 
@@ -601,33 +445,15 @@ namespace MiningOverhaul
             }
         }
 
-        private void CalculateNextSpawnTick(CreatureSpawnConfig config)
+        private void CalculateNextSpawnTick(ThreatTier tier)
         {
-            float currentStabilityLoss = GetCurrentStabilityLossPercent();
-            
-            // TRUE SCALING: instabilityScalingFactor controls how much stability affects frequency
-            float baselineStability = 0.5f; // 50% instability = baseline
-            float stabilityDifference = currentStabilityLoss - baselineStability;
-            float scaledDifference = stabilityDifference * config.instabilityScalingFactor;
-            
-            // Convert to frequency multiplier: 50% = 1.0x, above/below scales with factor
-            // Higher frequency = shorter intervals = more spawns
-            float frequencyMultiplier = 1.0f + scaledDifference;
-            
-            // Ensure reasonable bounds for frequency
-            frequencyMultiplier = Mathf.Clamp(frequencyMultiplier, 0.2f, 4.0f);
-            
-            // Calculate scaled interval: higher frequency multiplier = shorter interval
-            float scaledIntervalHours = config.baseSpawnFrequencyHours / frequencyMultiplier;
-            
-            // Convert to ticks (1 hour = 2500 ticks)
-            int intervalTicks = Mathf.RoundToInt(scaledIntervalHours * 2500f);
-            
-            nextSpawnTicks[config] = Find.TickManager.TicksGame + intervalTicks;
+            // Simple calculation: use tier's interval directly
+            int intervalTicks = Mathf.RoundToInt(tier.spawnIntervalHours * 2500f);
+            nextSpawnTicks[tier] = Find.TickManager.TicksGame + intervalTicks;
             
             if (Props.debugMode)
             {
-                MOLog.Message($"CompCavernCreatureSpawner: {config.label} - Next spawn in {scaledIntervalHours:F1} hours");
+                MOLog.Message($"CompCavernCreatureSpawner: Next spawn in {tier.spawnIntervalHours:F1} hours");
             }
         }
 
@@ -636,24 +462,16 @@ namespace MiningOverhaul
             base.PostExposeData();
             Scribe_Collections.Look(ref validSpawnCells, "validSpawnCells", LookMode.Value);
             Scribe_Values.Look(ref lastValidationTick, "lastValidationTick", -999999);
-            Scribe_Values.Look(ref validationIndex, "validationIndex", 0);
-            Scribe_Values.Look(ref hasInitialValidation, "hasInitialValidation", false);
 
             if (validSpawnCells == null)
                 validSpawnCells = new List<IntVec3>();
             if (nextSpawnTicks == null)
-                nextSpawnTicks = new Dictionary<CreatureSpawnConfig, int>();
+                nextSpawnTicks = new Dictionary<ThreatTier, int>();
 
             // Reinitialize spawn ticks if needed after loading
             if (Scribe.mode == LoadSaveMode.PostLoadInit && nextSpawnTicks.Count == 0)
             {
                 InitializeSpawnTicks();
-            }
-            
-            // Reinitialize cached arrays after loading if pocket map exists
-            if (Scribe.mode == LoadSaveMode.PostLoadInit && CavernEntrance?.PocketMapExists == true && allCellsArray == null)
-            {
-                InitializeCellsArray();
             }
         }
 
@@ -664,16 +482,15 @@ namespace MiningOverhaul
                 yield return new Command_Action
                 {
                     defaultLabel = "DEV: Force Spawn All",
-                    defaultDesc = "Force spawn creatures from all configs now",
+                    defaultDesc = "Force spawn creatures from all tiers now",
                     action = delegate
                     {
-                        float currentStabilityLoss = GetCurrentStabilityLossPercent();
                         foreach (var config in Props.spawnConfigs)
                         {
-                            if (currentStabilityLoss >= config.minStabilityLoss && currentStabilityLoss <= config.maxStabilityLoss)
+                            foreach (var tier in config.threatTiers)
                             {
-                                TrySpawnCreatures(config);
-                                CalculateNextSpawnTick(config);
+                                TrySpawnCreatures(tier);
+                                CalculateNextSpawnTick(tier);
                             }
                         }
                     }
@@ -685,21 +502,14 @@ namespace MiningOverhaul
                     defaultDesc = "Refresh valid spawn cell cache",
                     action = delegate
                     {
-                        validationIndex = 0;
                         lastValidationTick = -999999;
                         UpdateValidSpawnCells();
                     }
                 };
 
                 string debugInfo = $"Valid Spawn Cells: {validSpawnCells.Count}";
-                debugInfo += $"\nStability Loss: {GetCurrentStabilityLossPercent():P1}";
+                debugInfo += $"\nInstability: {GetCurrentInstabilityPercent():P1}";
                 debugInfo += $"\nActive Configs: {Props.spawnConfigs.Count}";
-                
-                var stabilityLoss = GetCurrentStabilityLossPercent();
-                var validConfigs = Props.spawnConfigs.Where(config => 
-                    stabilityLoss >= config.minStabilityLoss && 
-                    stabilityLoss <= config.maxStabilityLoss).Count();
-                debugInfo += $"\nValid Configs: {validConfigs}";
 
                 yield return new Command_Action
                 {
@@ -709,15 +519,5 @@ namespace MiningOverhaul
             }
         }
         
-        // NEW: Initialize cached collections for O(1) access
-        private void InitializeCellsArray()
-        {
-            var pocketMap = CavernEntrance?.GetPocketMap();
-            if (pocketMap != null)
-            {
-                allCellsArray = pocketMap.AllCells.ToArray();
-                allCellsCount = allCellsArray.Length;
-            }
-        }
     }
 }
