@@ -55,7 +55,7 @@
     <modExtensions>
         <li Class="MiningOverhaul.AllowedBiomesExtension">
             <allowedBiomes>
-                <li>CavernNormal</li>
+                <li>CavernBase</li>
             </allowedBiomes>
         </li>
     </modExtensions>

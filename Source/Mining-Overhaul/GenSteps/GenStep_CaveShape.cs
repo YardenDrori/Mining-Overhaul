@@ -18,6 +18,12 @@ namespace MiningOverhaul
         public float initialAirChance = 0.60f;   // Starting cave density (0.0-1.0)
         public float maxCaveDistancePath = 6;
 
+        //TUNNEL VARIABLES HERE (Simplified)
+        public TunnelStyle tunnelStyle = TunnelStyle.Natural;    // Overall tunnel appearance
+        public TunnelWidth tunnelWidth = TunnelWidth.Mixed;      // How wide tunnels are
+        public bool enableTunnelSmoothing = true;                // Clean up tunnel edges
+        public bool enableGlobalSmoothing = false;               // Clean up entire cave
+
         //RUINS VARIABLES HERE
         public int MinRoomSizeWidth = 3;
         public int MinRoomSizeHeight = 3;
@@ -44,10 +50,66 @@ namespace MiningOverhaul
             CellularAutomata,    // Room-based systems
             Ruins
         }
+
+        public enum TunnelStyle
+        {
+            Straight,    // Direct paths, minimal wandering
+            Natural,     // Balanced curves and straightness  
+            Winding,     // Very curvy, organic paths
+            Chaotic      // Maximum randomness and irregularity
+        }
+
+        public enum TunnelWidth
+        {
+            Narrow,      // 1 tile wide corridors
+            Mixed,       // 1-2 tile variation
+            Wide,        // 2-3 tile variation
+            VeryWide     // 2-4 tile variation (can be quite large)
+        }
         #endregion
 
         private const int MinRoofedCellsPerGroup = 20;
         public override int SeedPart => 1182952823;
+
+        /// <summary>
+        /// Gets tunnel parameters based on the selected style
+        /// </summary>
+        private (float biasMin, float biasMax, int wanderMult, float irregularity) GetTunnelStyleParams()
+        {
+            switch (tunnelStyle)
+            {
+                case TunnelStyle.Straight:
+                    return (0.85f, 0.95f, 2, 0.9f);      // Very direct, minimal wandering
+                case TunnelStyle.Natural:
+                    return (0.65f, 0.85f, 3, 0.8f);      // Balanced natural look
+                case TunnelStyle.Winding:
+                    return (0.45f, 0.75f, 5, 0.7f);      // Very curvy paths
+                case TunnelStyle.Chaotic:
+                    return (0.3f, 0.6f, 6, 0.6f);        // Maximum randomness
+                default:
+                    return (0.65f, 0.85f, 3, 0.8f);      // Default to Natural
+            }
+        }
+
+        /// <summary>
+        /// Gets tunnel width parameters based on the selected width style
+        /// </summary>
+        private (int minWidth, int maxWidth) GetTunnelWidthParams()
+        {
+            switch (tunnelWidth)
+            {
+                case TunnelWidth.Narrow:
+                    return (1, 1);        // Always 1 tile
+                case TunnelWidth.Mixed:
+                    return (1, 2);        // 1-2 tile variation
+                case TunnelWidth.Wide:
+                    return (2, 3);        // 2-3 tile variation
+                case TunnelWidth.VeryWide:
+                    return (2, 4);        // 2-4 tile variation (can be large)
+                default:
+                    return (1, 2);        // Default to Mixed
+            }
+        }
 
         public static ThingDef RockDefAt(IntVec3 c)
         {
@@ -338,24 +400,212 @@ namespace MiningOverhaul
         }
 
         private BoolGrid CarveShortTunnel(BoolGrid caves, Map map, IntVec3 Origin, IntVec3 Dest) {
-            Log.Message("carving tunnel");
-            IntVec3 current = Origin;
-            while (current != Dest)
+            Log.Message($"Carving natural tunnel from {Origin} to {Dest} (distance: {Origin.DistanceTo(Dest):F1})");
+            
+            // Create a natural, curved path using drunk walk with bias toward destination
+            List<IntVec3> tunnelPath = GenerateNaturalPath(Origin, Dest, map);
+            
+            // Carve the tunnel with variable width and natural irregularities
+            foreach (IntVec3 pathPoint in tunnelPath)
             {
-                IntVec3 direction = Dest - current;
-                caves[current] = true;
-                if (Math.Abs(direction.x) > Math.Abs(direction.z))
+                CarveNaturalTunnelAt(caves, map, pathPoint);
+            }
+            
+            // Apply smoothing pass to make edges more organic (if enabled)
+            if (enableTunnelSmoothing)
+                caves = SmoothTunnelEdges(caves, map, tunnelPath);
+            
+            return caves;
+        }
+
+        /// <summary>
+        /// Generates a natural, curved path between two points using biased random walk
+        /// </summary>
+        private List<IntVec3> GenerateNaturalPath(IntVec3 start, IntVec3 end, Map map)
+        {
+            var styleParams = GetTunnelStyleParams();
+            
+            List<IntVec3> path = new List<IntVec3>();
+            IntVec3 current = start;
+            path.Add(current);
+            
+            int maxSteps = (int)(start.DistanceTo(end) * styleParams.wanderMult + 20); // Allow for wandering
+            int steps = 0;
+            
+            while (current.DistanceTo(end) > 1 && steps < maxSteps)
+            {
+                // Bias toward destination but allow wandering for natural curves
+                float biasStrength = Mathf.Lerp(styleParams.biasMin, styleParams.biasMax, (float)steps / maxSteps); // Increase bias over time
+                
+                IntVec3 nextStep;
+                if (Rand.Chance(biasStrength))
                 {
-                    current += new IntVec3(Math.Sign(direction.x), 0, 0);
+                    // Move toward destination (biased step)
+                    IntVec3 direction = end - current;
+                    List<IntVec3> preferredDirections = GetPreferredDirections(direction);
+                    nextStep = current + preferredDirections.RandomElement();
                 }
                 else
                 {
-                    current += new IntVec3(0, 0, Math.Sign(direction.z));
+                    // Random wandering for natural curves
+                    nextStep = current + GenAdj.CardinalDirections.RandomElement();
                 }
-                if (!current.InBounds(map)) break;
+                
+                // Ensure we stay in bounds
+                if (nextStep.InBounds(map))
+                {
+                    current = nextStep;
+                    path.Add(current);
+                }
+                
+                steps++;
             }
-            caves[current] = true;
-            return caves;
+            
+            // Ensure we end at the destination
+            if (current != end && end.InBounds(map))
+            {
+                path.Add(end);
+            }
+            
+            Log.Message($"Generated natural path with {path.Count} points (target distance: {start.DistanceTo(end):F1})");
+            return path;
+        }
+
+        /// <summary>
+        /// Gets preferred movement directions toward a target, with some randomization
+        /// </summary>
+        private List<IntVec3> GetPreferredDirections(IntVec3 direction)
+        {
+            List<IntVec3> directions = new List<IntVec3>();
+            
+            // Primary direction (strongest bias)
+            if (Math.Abs(direction.x) > Math.Abs(direction.z))
+            {
+                directions.Add(new IntVec3(Math.Sign(direction.x), 0, 0));
+                directions.Add(new IntVec3(Math.Sign(direction.x), 0, 0)); // Add twice for higher weight
+            }
+            else
+            {
+                directions.Add(new IntVec3(0, 0, Math.Sign(direction.z)));
+                directions.Add(new IntVec3(0, 0, Math.Sign(direction.z))); // Add twice for higher weight
+            }
+            
+            // Secondary direction (weaker bias)
+            if (Math.Abs(direction.z) > 0)
+                directions.Add(new IntVec3(0, 0, Math.Sign(direction.z)));
+            if (Math.Abs(direction.x) > 0)
+                directions.Add(new IntVec3(Math.Sign(direction.x), 0, 0));
+            
+            return directions;
+        }
+
+        /// <summary>
+        /// Carves tunnel with variable width and natural irregularities
+        /// </summary>
+        private void CarveNaturalTunnelAt(BoolGrid caves, Map map, IntVec3 center)
+        {
+            var widthParams = GetTunnelWidthParams();
+            var styleParams = GetTunnelStyleParams();
+            
+            // Variable tunnel width using configurable values
+            int width = Rand.RangeInclusive(widthParams.minWidth, widthParams.maxWidth);
+            
+            if (width == 1)
+            {
+                // Single cell
+                if (center.InBounds(map))
+                    caves[center] = true;
+            }
+            else if (width == 2)
+            {
+                // 2x2 area with some randomness
+                for (int x = 0; x < 2; x++)
+                {
+                    for (int z = 0; z < 2; z++)
+                    {
+                        IntVec3 pos = center + new IntVec3(x - 1, 0, z - 1);
+                        if (pos.InBounds(map) && Rand.Chance(styleParams.irregularity)) // Configurable chance for natural irregularity
+                            caves[pos] = true;
+                    }
+                }
+            }
+            else // width >= 3
+            {
+                // Variable area based on width (3x3 for width 3, 4x4 for width 4, etc.)
+                int radius = width - 1;
+                for (int x = -radius; x <= radius; x++)
+                {
+                    for (int z = -radius; z <= radius; z++)
+                    {
+                        IntVec3 pos = center + new IntVec3(x, 0, z);
+                        if (pos.InBounds(map))
+                        {
+                            // Chance decreases with distance from center for organic shape
+                            float distanceFromCenter = Mathf.Sqrt(x * x + z * z);
+                            float chanceToCarve = 1.0f - (distanceFromCenter / (radius + 1)) * 0.4f; // 60% chance at edges
+                            chanceToCarve = Mathf.Max(chanceToCarve, 0.5f); // Minimum 50% chance
+                            
+                            if (Rand.Chance(chanceToCarve * styleParams.irregularity))
+                                caves[pos] = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Applies cellular automata smoothing to tunnel edges for organic appearance
+        /// </summary>
+        private BoolGrid SmoothTunnelEdges(BoolGrid caves, Map map, List<IntVec3> tunnelPath)
+        {
+            // Create a set of cells that are part of the tunnel for faster lookup
+            HashSet<IntVec3> tunnelCells = new HashSet<IntVec3>();
+            foreach (IntVec3 pathPoint in tunnelPath)
+            {
+                // Add the carved area around each path point
+                for (int x = -2; x <= 2; x++)
+                {
+                    for (int z = -2; z <= 2; z++)
+                    {
+                        IntVec3 pos = pathPoint + new IntVec3(x, 0, z);
+                        if (pos.InBounds(map) && caves[pos])
+                            tunnelCells.Add(pos);
+                    }
+                }
+            }
+            
+            // Apply one pass of smoothing only to tunnel edges
+            BoolGrid smoothed = new BoolGrid(map);
+            
+            foreach (IntVec3 cell in map.AllCells)
+            {
+                smoothed[cell] = caves[cell]; // Default: keep original
+                
+                // Only smooth cells near tunnels
+                bool nearTunnel = false;
+                for (int x = -3; x <= 3 && !nearTunnel; x++)
+                {
+                    for (int z = -3; z <= 3 && !nearTunnel; z++)
+                    {
+                        IntVec3 nearby = cell + new IntVec3(x, 0, z);
+                        if (tunnelCells.Contains(nearby))
+                            nearTunnel = true;
+                    }
+                }
+                
+                if (nearTunnel)
+                {
+                    int caveNeighbors = CountRockNeighbors(caves, cell, map);
+                    
+                    // Gentle smoothing - only clean up obvious artifacts
+                    if (!caves[cell] && caveNeighbors <= 2) // Fill small gaps
+                        smoothed[cell] = true;
+                    else if (caves[cell] && caveNeighbors >= 6) // Remove small protrusions
+                        smoothed[cell] = false;
+                }
+            }
+            
+            return smoothed;
         }
 
         private BoolGrid EnsureCaveConnectivity(BoolGrid caves, Map map, List<List<IntVec3>> AllRegions)
@@ -376,8 +626,42 @@ namespace MiningOverhaul
         {
             List<List<IntVec3>> AllRegions = FindCaveRegions(caves, map);
             caves = FillRegions(caves, map, AllRegions);
+            
+            // Re-find regions after filling small ones - this is critical!
+            AllRegions = FindCaveRegions(caves, map);
             caves = EnsureCaveConnectivity(caves, map, AllRegions);
+            
+            // Apply global smoothing if enabled (may reduce natural character)
+            if (enableGlobalSmoothing)
+            {
+                caves = ApplyGlobalSmoothing(caves, map);
+            }
+            
             return caves;
+        }
+
+        /// <summary>
+        /// Applies cellular automata smoothing to the entire cave system
+        /// </summary>
+        private BoolGrid ApplyGlobalSmoothing(BoolGrid caves, Map map)
+        {
+            Log.Message("Applying global cave smoothing - this may reduce natural character");
+            BoolGrid smoothed = new BoolGrid(map);
+            
+            foreach (IntVec3 cell in map.AllCells)
+            {
+                int caveNeighbors = CountRockNeighbors(caves, cell, map);
+                
+                // Gentle smoothing rules - preserve general structure
+                if (!caves[cell] && caveNeighbors <= 3) // Fill small gaps and thin walls
+                    smoothed[cell] = true;
+                else if (caves[cell] && caveNeighbors >= 5) // Remove small protrusions
+                    smoothed[cell] = false;
+                else
+                    smoothed[cell] = caves[cell]; // Keep original
+            }
+            
+            return smoothed;
         }
 
 

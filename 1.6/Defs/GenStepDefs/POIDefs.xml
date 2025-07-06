@@ -5,16 +5,16 @@
     <defName>MO_InsectHiveEncounter</defName>
     <spawnChance>0.15</spawnChance>                      <!-- 15% chance per grid cell -->
     <minDistance>20</minDistance>                        <!-- Keep hives far apart -->
-    <minDistanceFromEntrance>15</minDistanceFromEntrance> <!-- Don't spawn near entrance -->
+    <minDistanceFromEntrance>20</minDistanceFromEntrance> <!-- Don't spawn near entrance -->
     <nearbyRadius>4</nearbyRadius>
     <coreItems>
       <li><thingDef>Hive</thingDef><count>1~2</count></li>
-      <li><pawnKindDef>Megascarab</pawnKindDef><count>2~4</count></li>
+      <li><pawnKindDef>Megascarab</pawnKindDef><count>1~4</count></li>
       <li><pawnKindDef>Spelopede</pawnKindDef><count>1~2</count></li>
     </coreItems>
     <nearbyItems>
       <li><thingDef>InsectJelly</thingDef><count>1~3</count><stackCount>5~15</stackCount></li>
-      <li><thingDef>Plant_Brambles</thingDef><count>3~8</count></li>
+      <li><thingDef>GlowPod</thingDef><count>1~3</count></li>
       <li><thingDef>Filth_Slime</thingDef><count>3~8</count></li>
     </nearbyItems>
   </MiningOverhaul.SimplePOIDef>

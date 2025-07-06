@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Defs>
 
-<MapGeneratorDef Name="Cavern">
-  <defName>cavern</defName>
-  <label>cavern</label>
+<MapGeneratorDef Name="CavernGenericMapGenerator">
+  <defName>CavernBaseMapGenDef</defName>
+  <label>cavern base</label>
   <isUnderground>true</isUnderground>
   <forceCaves>false</forceCaves>
   <ignoreAreaRevealedLetter>true</ignoreAreaRevealedLetter>
@@ -12,8 +12,20 @@
     <li>UndercaveMapComponent</li>
   </customMapComponents>
   <pocketMapProperties>
-    <biome>CavernNormal</biome>
+    <biome>CaveBaseBiome</biome>
     <temperature>15</temperature>
+    <tileMutators>
+      <li>UndergroundCave</li>
+    </tileMutators>
+  </pocketMapProperties>
+</MapGeneratorDef>
+
+ <MapGeneratorDef ParentName="CavernGenericMapGenerator">
+  <defName>CavernVegetationMapGenDef</defName>
+  <label>vegetation choked cavern</label>
+  <pocketMapProperties>
+    <biome>CaveVegetationBiome</biome>
+    <temperature>35</temperature>
     <tileMutators>
       <li>UndergroundCave</li>
     </tileMutators>
@@ -21,7 +33,8 @@
   <genSteps>
     <li>ElevationFertility</li>
     <li>MutatorPostElevationFertility</li>
-    <li>DefaultCave</li>
+    <li>CaveVegetationGenStep</li>
+    <li>VegetationCaveFloor</li>
     <li>Terrain</li>
     <li>MutatorPostTerrain</li>
     <li>MutatorCriticalStructures</li>
@@ -38,7 +51,7 @@
     <li>MutatorFinal</li>
     <li>Fog</li>
   </genSteps>
-</MapGeneratorDef>
+ </MapGeneratorDef>
 
 
 

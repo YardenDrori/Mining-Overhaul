@@ -187,19 +187,27 @@ namespace MiningOverhaul
                 }
             }
 
-            // Spawn nearby items around the core
-            foreach (POIItem item in poiDef.nearbyItems)
+            // Only spawn nearby items if core items were successfully spawned
+            if (thisPOIPositions.Count > 0)
             {
-                int countToSpawn = item.count.RandomInRange;
-                for (int i = 0; i < countToSpawn; i++)
+                // Spawn nearby items around the core
+                foreach (POIItem item in poiDef.nearbyItems)
                 {
-                    IntVec3 spawnPos = GetSpawnPosition(centerPos, poiDef.nearbyRadius, thisPOIPositions);
-                    if (spawnPos.IsValid && SpawnItem(item, spawnPos))
+                    int countToSpawn = item.count.RandomInRange;
+                    for (int i = 0; i < countToSpawn; i++)
                     {
-                        thisPOIPositions.Add(spawnPos);
-                        itemsSpawned++;
+                        IntVec3 spawnPos = GetSpawnPosition(centerPos, poiDef.nearbyRadius, thisPOIPositions);
+                        if (spawnPos.IsValid && SpawnItem(item, spawnPos))
+                        {
+                            thisPOIPositions.Add(spawnPos);
+                            itemsSpawned++;
+                        }
                     }
                 }
+            }
+            else
+            {
+                MOLog.Warning($"POI at {centerPos}: No core items spawned, skipping nearby items");
             }
             
             MOLog.Message($"POI at {centerPos}: {itemsSpawned} items spawned");

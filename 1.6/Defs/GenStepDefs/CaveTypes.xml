@@ -2,21 +2,25 @@
     <GenStepDef Name="CaveBase">
         <defName>CaveBase</defName>
         <order>200</order>
-        <genStep Class="MiningOverhaul.GenStep_CaveShape">
-            <minAutomataCycles>5</minAutomataCycles>
-            <maxAutomataCycles>5</maxAutomataCycles>
-            <initialAirChance>0.6</initialAirChance>
-            <maxCaveDistancePath>6</maxCaveDistancePath>
-        </genStep>
+        <genStep Class="MiningOverhaul.GenStep_CaveShape" />
     </GenStepDef>
 
     <GenStepDef ParentName="CaveBase">
-        <defName>CaveVegetation</defName>
-        <genStep Class="MiningOverhaul.GenStep_CaveVegetation">
-            <minAutomataCycles>5</minAutomataCycles>
-            <maxAutomataCycles>7</maxAutomataCycles>
-            <initialAirChance>0.55</initialAirChance>
-            <maxCaveDistancePath>6</maxCaveDistancePath>
+        <defName>CaveVegetationGenStep</defName>
+        <genStep Class="MiningOverhaul.GenStep_CaveShape">
+            <!-- Cave Generation Settings -->
+            <minAutomataCycles>6</minAutomataCycles>
+            <maxAutomataCycles>6</maxAutomataCycles>
+            <initialAirChance>0.57</initialAirChance>
+            <maxCaveDistancePath>13</maxCaveDistancePath>
+            
+            <!-- Natural Tunnel Settings (Simplified) -->
+            <tunnelStyle>Chaotic</tunnelStyle>       <!-- Straight, Natural, Winding, or Chaotic -->
+            <tunnelWidth>Wide</tunnelWidth>         <!-- Narrow, Mixed, Wide, or VeryWide -->
+            
+            <!-- Smoothing Settings -->
+            <enableTunnelSmoothing>true</enableTunnelSmoothing>     <!-- Smooth tunnel edges only (recommended) -->
+            <enableGlobalSmoothing>true</enableGlobalSmoothing>    <!-- Smooth entire cave (may look too uniform) -->
         </genStep>
     </GenStepDef>
 

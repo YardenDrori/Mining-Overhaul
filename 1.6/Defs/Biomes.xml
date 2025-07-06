@@ -1,19 +1,17 @@
 <Defs>
   <BiomeDef Name="CavernBase" ParentName="Biome_Underground">
-    <defName>CavernBase</defName>
+    <defName>CaveBaseBiome</defName>
     <label>underground</label>
     <description>TODO</description>
     <baseWeatherCommonalities>
       <CavernClear>1</CavernClear>
     </baseWeatherCommonalities>
-    <baseTemperature>15</baseTemperature>
     <plantDensity>0.0</plantDensity>
   </BiomeDef>
 
   <BiomeDef ParentName="CavernBase">
-    <defName>VegetationCave</defName>
+    <defName>CaveVegetationBiome</defName>
     <label>Vegetation Choked Cavern</label>
     <description>TODO</description>
-    <baseTemperature>35</baseTemperature>
   </BiomeDef>
 </Defs>
