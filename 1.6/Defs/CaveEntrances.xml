@@ -52,9 +52,9 @@
 
 
     <ThingDef ParentName="CavernEntranceBase">
-        <defName>CavernEntrance</defName>
-        <label>cavern entrance</label>
-        <description>A massive, foreboding hole that connects the surface with a network of underground caves. It is possible to climb down into the cavern below. The entrance looks unstable and will collapse in a matter of days.</description>
+        <defName>CavernEntranceVegetation</defName>
+        <label>vegetation choked cavern entrance</label>
+        <description>TODO</description>
         <portal>
             <pocketMapGenerator>CavernVegetationMapGenDef</pocketMapGenerator>
             <exitDef>CavernExit</exitDef>
