@@ -16,6 +16,7 @@ namespace MiningOverhaul
         private const int MiningInstabilityIncrease = 1000; // Adjust this value as needed
         private const int PartialCollapseInterval = 120; // Ticks between blocking cells
         private const int AcceleratedCollapseInterval = 15; // Much faster blocking during collapse
+        private float CollapseKillThreshold = 1.5f; // 150% stability for forced collapse
         
         // Performance optimization constants
         private const int CELLS_PER_REFRESH = 50; // Process this many cells per tick
@@ -740,7 +741,7 @@ namespace MiningOverhaul
                     // However, if we're WAY past collapse point (150%+), crush the pawn
                     // This prevents infinite caves when pawns refuse to leave
                     float stabilityPercent = GetStabilityPercent();
-                    if (stabilityPercent >= 1.5f) // 150% instability = forced collapse
+                    if (stabilityPercent >= CollapseKillThreshold) // 150% instability = forced collapse
                     {
                         // Only log once per pawn to avoid spam
                         if (!HasLoggedForcedCollapseFor(pawn))
