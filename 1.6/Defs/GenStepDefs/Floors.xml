@@ -1,10 +1,11 @@
 <Defs>
     <GenStepDef>
-        <defName>cool_name</defName>
+        <defName>VegetationCaveFloor</defName>
         <order>300</order>
         <genStep Class="MiningOverhaul.GenStep_FloorReplacement">
-            <floorTile1>MossyTerrain</floorTile1>
-            <floorTile1Percentage>100</floorTile1Percentage>
+            <floorTile1>Gravel</floorTile1>
+            <floorTile1Percentage>30</floorTile1Percentage>
+            <floorTile2>MossyTerrain</floorTile2>
             <blotchTerrain>WaterShallow</blotchTerrain>
             <blotchPercentage>10</blotchPercentage>
             <blotchCount>5</blotchCount>
@@ -12,23 +13,6 @@
             <maxBlotchSize>15</maxBlotchSize>
             <use8DirectionalWalk>false</use8DirectionalWalk>
             <blotchDensity>0.8</blotchDensity>
-        </genStep>  <!-- lowercase g to match opening tag -->
-    </GenStepDef>
-
-    <GenStepDef>
-        <defName>FloodedCavernFloor</defName>
-        <order>300</order>
-        <genStep Class="MiningOverhaul.GenStep_FloorReplacement">
-            <floorTile1>MossyTerrain</floorTile1>
-            <floorTile1Percentage>100</floorTile1Percentage>
-            <floorTile2>WaterShallow</floorTile2>
-            <blotchTerrain>WaterShallow</blotchTerrain>
-            <blotchPercentage>10</blotchPercentage>
-            <blotchCount>5</blotchCount>
-            <minBlotchSize>5</minBlotchSize>
-            <maxBlotchSize>15</maxBlotchSize>
-            <use8DirectionalWalk>false</use8DirectionalWalk>
-            <blotchDensity>0.8</blotchDensity>
-        </genStep>  <!-- lowercase g to match opening tag -->
+        </genStep>
     </GenStepDef>
 </Defs>
