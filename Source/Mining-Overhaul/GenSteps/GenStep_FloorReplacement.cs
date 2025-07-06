@@ -11,9 +11,7 @@ namespace MiningOverhaul
         public TerrainDef floorTile1 = null;
         public float floorTile1Percentage = 100f;
         
-        public TerrainDef floorTile2 = null;
-        public float floorTile2Percentage = 0f;
-        
+        public TerrainDef floorTile2 = null;        
         // Blotch terrain configuration
         public TerrainDef blotchTerrain = null;
         public float blotchPercentage = 0f;
@@ -221,6 +219,7 @@ namespace MiningOverhaul
         /// </summary>
         private List<(TerrainDef terrain, float weight)> PrepareTerrainWeights()
         {
+            float floorTile2Percentage = 100f - floorTile1Percentage; // Default to fill the rest
             List<(TerrainDef terrain, float weight)> validTiles = new List<(TerrainDef, float)>();
 
             // Collect all valid terrain definitions
