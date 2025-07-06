@@ -6,7 +6,7 @@
     <defName>CaveInsectHives</defName>
     <order>450</order>
     <genStep Class="MiningOverhaul.GenStep_POIGeneration">
-        <genStepDef>MO_InsectHiveGen</genStepDef>
+        <poiDef>MO_InsectHiveEncounter</poiDef>
     </genStep>
   </GenStepDef>
 
@@ -14,7 +14,7 @@
     <defName>CavePlantClusters</defName>
     <order>451</order>
     <genStep Class="MiningOverhaul.GenStep_POIGeneration">
-        <genStepDef>MO_PlantClusterGen</genStepDef>
+        <poiDef>MO_PlantCluster</poiDef>
     </genStep>
   </GenStepDef>
 
@@ -22,7 +22,7 @@
     <defName>CaveBrambleThickets</defName>
     <order>452</order>
     <genStep Class="MiningOverhaul.GenStep_POIGeneration">
-        <genStepDef>MO_BrambleThicketGen</genStepDef>
+        <poiDef>MO_BrambleThicket</poiDef>
     </genStep>
   </GenStepDef>
 
@@ -30,7 +30,7 @@
     <defName>CaveResourceCaches</defName>
     <order>453</order>
     <genStep Class="MiningOverhaul.GenStep_POIGeneration">
-        <genStepDef>MO_ResourceCacheGen</genStepDef>
+        <poiDef>MO_ResourceCache</poiDef>
     </genStep>
   </GenStepDef>
 
@@ -38,7 +38,7 @@
     <defName>CaveCreatureLairs</defName>
     <order>454</order>
     <genStep Class="MiningOverhaul.GenStep_POIGeneration">
-        <genStepDef>MO_CreatureLairGen</genStepDef>
+        <poiDef>MO_CreatureLair</poiDef>
     </genStep>
   </GenStepDef>
 

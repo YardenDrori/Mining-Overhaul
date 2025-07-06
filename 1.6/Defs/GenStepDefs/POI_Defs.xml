@@ -1,48 +1,84 @@
 <Defs>
 
   <!-- INSECT HIVE ENCOUNTERS - Dangerous but rewarding -->
-  <MiningOverhaul.POIGenStepDef>
-    <defName>MO_InsectHiveGen</defName>
-    <minDistanceBetweenPOIs>20</minDistanceBetweenPOIs>  <!-- Keep hives far apart -->
+  <MiningOverhaul.SimplePOIDef>
+    <defName>MO_InsectHiveEncounter</defName>
+    <spawnChance>0.15</spawnChance>                      <!-- 15% chance per grid cell -->
+    <minDistance>20</minDistance>                        <!-- Keep hives far apart -->
     <minDistanceFromEntrance>15</minDistanceFromEntrance> <!-- Don't spawn near entrance -->
-    <spawnChancePercent>15</spawnChancePercent>          <!-- 15% chance per grid cell -->
-    <poiContent>MO_InsectHiveEncounter</poiContent>
-    <allowedBiomes>
-      <!-- Add specific cave biomes here when available -->
-    </allowedBiomes>
-  </MiningOverhaul.POIGenStepDef>
+    <nearbyRadius>4</nearbyRadius>
+    <coreItems>
+      <li><thingDef>Hive</thingDef><count>1~2</count></li>
+      <li><pawnKindDef>Megascarab</pawnKindDef><count>2~4</count></li>
+      <li><pawnKindDef>Spelopede</pawnKindDef><count>1~2</count></li>
+    </coreItems>
+    <nearbyItems>
+      <li><thingDef>InsectJelly</thingDef><count>1~3</count><stackCount>5~15</stackCount></li>
+      <li><thingDef>Plant_Brambles</thingDef><count>3~8</count></li>
+      <li><thingDef>Filth_Slime</thingDef><count>3~8</count></li>
+    </nearbyItems>
+  </MiningOverhaul.SimplePOIDef>
 
   <!-- PLANT CLUSTERS - Decorative vegetation -->
-  <MiningOverhaul.POIGenStepDef>
-    <defName>MO_PlantClusterGen</defName>
-    <minDistanceBetweenPOIs>8</minDistanceBetweenPOIs>   <!-- Plants reasonably spaced -->
-    <spawnChancePercent>25</spawnChancePercent>          <!-- 25% chance per grid cell -->
-    <poiContent>MO_PlantCluster</poiContent>
-  </MiningOverhaul.POIGenStepDef>
+  <MiningOverhaul.SimplePOIDef>
+    <defName>MO_PlantCluster</defName>
+    <spawnChance>0.25</spawnChance>                      <!-- 25% chance per grid cell -->
+    <minDistance>8</minDistance>                         <!-- Plants reasonably spaced -->
+    <nearbyRadius>3</nearbyRadius>
+    <coreItems>
+      <li><thingDef>Plant_Grass</thingDef><count>5~10</count></li>
+      <li><thingDef>Plant_Dandelion</thingDef><count>2~5</count></li>
+    </coreItems>
+    <nearbyItems>
+      <li><thingDef>Plant_Rose</thingDef><count>1~2</count></li>
+    </nearbyItems>
+  </MiningOverhaul.SimplePOIDef>
 
   <!-- BRAMBLE THICKETS - Natural barriers -->
-  <MiningOverhaul.POIGenStepDef>
-    <defName>MO_BrambleThicketGen</defName>
-    <minDistanceBetweenPOIs>12</minDistanceBetweenPOIs>  <!-- Thickets reasonably spaced -->
-    <spawnChancePercent>20</spawnChancePercent>          <!-- 20% chance per grid cell -->
-    <poiContent>MO_BrambleThicket</poiContent>
-  </MiningOverhaul.POIGenStepDef>
+  <MiningOverhaul.SimplePOIDef>
+    <defName>MO_BrambleThicket</defName>
+    <spawnChance>0.20</spawnChance>                      <!-- 20% chance per grid cell -->
+    <minDistance>12</minDistance>                        <!-- Thickets reasonably spaced -->
+    <nearbyRadius>4</nearbyRadius>
+    <coreItems>
+      <li><thingDef>Plant_Brambles</thingDef><count>8~15</count></li>
+    </coreItems>
+    <nearbyItems>
+      <li><thingDef>Plant_Brambles</thingDef><count>3~8</count></li>
+    </nearbyItems>
+  </MiningOverhaul.SimplePOIDef>
 
   <!-- RESOURCE CACHES - Valuable finds -->
-  <MiningOverhaul.POIGenStepDef>
-    <defName>MO_ResourceCacheGen</defName>
-    <minDistanceBetweenPOIs>15</minDistanceBetweenPOIs>  <!-- Keep caches spread out -->
-    <spawnChancePercent>10</spawnChancePercent>          <!-- 10% chance per grid cell -->
-    <poiContent>MO_ResourceCache</poiContent>
-  </MiningOverhaul.POIGenStepDef>
+  <MiningOverhaul.SimplePOIDef>
+    <defName>MO_ResourceCache</defName>
+    <spawnChance>0.10</spawnChance>                      <!-- 10% chance per grid cell -->
+    <minDistance>15</minDistance>                        <!-- Keep caches spread out -->
+    <nearbyRadius>2</nearbyRadius>
+    <coreItems>
+      <li><thingDef>ChunkSlagSteel</thingDef><count>2~4</count></li>
+      <li><thingDef>Silver</thingDef><count>1~2</count><stackCount>15~35</stackCount></li>
+    </coreItems>
+    <nearbyItems>
+      <li><thingDef>ComponentIndustrial</thingDef><count>1~3</count><stackCount>1~2</stackCount></li>
+      <li><thingDef>ComponentSpacer</thingDef><count>1</count><stackCount>1</stackCount></li>
+    </nearbyItems>
+  </MiningOverhaul.SimplePOIDef>
 
   <!-- CREATURE LAIRS - Dangerous predator nests -->
-  <MiningOverhaul.POIGenStepDef>
-    <defName>MO_CreatureLairGen</defName>
-    <minDistanceBetweenPOIs>25</minDistanceBetweenPOIs>  <!-- Keep lairs far apart -->
+  <MiningOverhaul.SimplePOIDef>
+    <defName>MO_CreatureLair</defName>
+    <spawnChance>0.08</spawnChance>                      <!-- 8% chance per grid cell -->
+    <minDistance>25</minDistance>                        <!-- Keep lairs far apart -->
     <minDistanceFromEntrance>12</minDistanceFromEntrance> <!-- Don't spawn too close to entrance -->
-    <spawnChancePercent>8</spawnChancePercent>           <!-- 8% chance per grid cell -->
-    <poiContent>MO_CreatureLair</poiContent>
-  </MiningOverhaul.POIGenStepDef>
+    <nearbyRadius>4</nearbyRadius>
+    <coreItems>
+      <li><pawnKindDef>Warg</pawnKindDef><count>1~3</count></li>
+      <li><pawnKindDef>Bear_Grizzly</pawnKindDef><count>1~2</count></li>
+    </coreItems>
+    <nearbyItems>
+      <li><thingDef>Filth_Blood</thingDef><count>3~8</count></li>
+      <li><thingDef>Meat_Human</thingDef><count>1~4</count><stackCount>5~15</stackCount></li>
+    </nearbyItems>
+  </MiningOverhaul.SimplePOIDef>
 
 </Defs>

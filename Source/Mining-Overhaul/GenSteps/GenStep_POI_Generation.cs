@@ -6,67 +6,32 @@ using UnityEngine;
 
 namespace MiningOverhaul
 {
-    // POI Generation Rules
-    public class POIGenStepDef : Def
+    // Simplified POI Definition - combines all the old classes
+    public class SimplePOIDef : Def
     {
-        public float minDistanceBetweenPOIs = 10f;    // Distance between POIs of same type
-        public float spawnChancePercent = 20f;        // % chance for POI to spawn per grid cell
-        public float minDistanceFromEntrance = 0f;   // Minimum distance from cave entrance
-        public POIContentDef poiContent;              // What this POI spawns
+        public float spawnChance = 0.1f;                       // Chance for POI to spawn per grid cell (0.0-1.0)
+        public float minDistance = 10f;                        // Distance between POIs of same type
+        public float minDistanceFromEntrance = 0f;             // Minimum distance from cave entrance
+        public List<POIItem> coreItems = new List<POIItem>();  // Main spawns (hives, buildings, etc.)
+        public List<POIItem> nearbyItems = new List<POIItem>(); // Spawns near core (jelly, decorations, etc.)
+        public float nearbyRadius = 3f;                        // Radius for nearby items
         public List<string> allowedBiomes = new List<string>(); // empty = all biomes
     }
 
-    // POI Content Definition
-    public class POIContentDef : Def
+    // Simple item definition - handles both things and creatures
+    public class POIItem
     {
-        public float density = 2f;                    // How close together spawned things are (radius)
-        public List<POISpawnGroup> spawnGroups = new List<POISpawnGroup>(); // Grouped spawning
-    }
-    
-    // NEW: Spawn groups for related things
-    public class POISpawnGroup
-    {
-        public string label = "Unnamed Group";        // For debugging/organization
-        public float spawnChance = 1f;               // Chance this group spawns (0.0-1.0)
-        public SpawnPattern pattern = SpawnPattern.Clustered; // How things in this group are arranged
-        public float groupRadius = 3f;               // Radius for this group's spawns
-        public List<POISpawnOption> spawnOptions = new List<POISpawnOption>();
-        public List<POIAnimalOption> animalOptions = new List<POIAnimalOption>();
-    }
-    
-    public enum SpawnPattern
-    {
-        Clustered,    // Things spawn close together
-        Scattered,    // Things spawn spread out in the radius
-        Ring,         // Things spawn in a circle around the center
-        Line          // Things spawn in a rough line
+        public ThingDef thingDef;                              // For items, buildings, filth
+        public PawnKindDef pawnKindDef;                        // For creatures
+        public IntRange count = new IntRange(1, 1);            // How many to spawn
+        public IntRange stackCount = new IntRange(1, 1);       // Stack size per item
+        public float weight = 1f;                              // Selection weight
     }
 
-    public class POISpawnOption
-    {
-        public ThingDef thingDef;
-        public TerrainDef terrainDef;
-        public IntRange thingCount = new IntRange(1, 1);      // How many of this thing spawn
-        public IntRange stackCount = new IntRange(1, 1);      // Stack size per thing
-        public QualityRange qualityRange = QualityRange.All; // Quality range
-        public float weight = 1f;                             // Selection weight
-    }
-
-    // NEW: Animal spawn options
-    public class POIAnimalOption
-    {
-        public PawnKindDef pawnKindDef;               // What kind of animal
-        public IntRange animalCount = new IntRange(1, 1); // How many animals
-        public string faction = "null";               // Faction (null = wild, Pirates, etc.)
-        public FloatRange ageRange = new FloatRange(0.1f, 0.8f); // Age as % of lifespan
-        public Gender? gender = null;                 // null = random, Male, Female
-        public float weight = 1f;                     // Selection weight
-    }
-
-    // The GenStep that does the work
+    // Simplified GenStep that does the work
     public class GenStep_POIGeneration : GenStep
     {
-        public POIGenStepDef genStepDef;
+        public SimplePOIDef poiDef;
         private List<IntVec3> usedPositions = new List<IntVec3>();
         private Map map;
 
@@ -77,30 +42,36 @@ namespace MiningOverhaul
             this.map = map;
             usedPositions.Clear();
 
-            if (genStepDef?.poiContent?.spawnGroups == null)
+            if (poiDef == null)
             {
-                MOLog.Warning($"POI GenStep {genStepDef?.defName ?? "unknown"} has no spawn groups defined");
+                MOLog.Warning($"POI GenStep has no POI definition");
                 return;
             }
 
-            MOLog.Message($"Starting POI generation for {genStepDef.defName} (chance: {genStepDef.spawnChancePercent}%, groups: {genStepDef.poiContent.spawnGroups.Count})");
+            if (poiDef.coreItems.NullOrEmpty())
+            {
+                MOLog.Warning($"POI {poiDef.defName} has no core items defined");
+                return;
+            }
+
+            MOLog.Message($"Starting POI generation for {poiDef.defName} (chance: {poiDef.spawnChance:P1})");
 
             // Check biome restriction
-            if (!genStepDef.allowedBiomes.NullOrEmpty())
+            if (!poiDef.allowedBiomes.NullOrEmpty())
             {
-                MOLog.Message($"Biome restrictions: {string.Join(", ", genStepDef.allowedBiomes)}");
+                MOLog.Message($"Biome restrictions: {string.Join(", ", poiDef.allowedBiomes)}");
                 // Add your cave biome detection here when ready
                 // For now, always allow
             }
 
             GeneratePOIs();
             
-            MOLog.Message($"POI generation complete. Spawned {usedPositions.Count} POIs of type {genStepDef.defName}");
+            MOLog.Message($"POI generation complete. Spawned {usedPositions.Count} POIs of type {poiDef.defName}");
         }
 
         private void GeneratePOIs()
         {
-            int gridSize = Mathf.RoundToInt(genStepDef.minDistanceBetweenPOIs);
+            int gridSize = Mathf.RoundToInt(poiDef.minDistance);
             if (gridSize < 1) gridSize = 1;
 
             int gridCells = 0;
@@ -118,7 +89,7 @@ namespace MiningOverhaul
                     gridCells++;
                     
                     // Roll for spawn chance
-                    if (Rand.Range(0f, 100f) <= genStepDef.spawnChancePercent)
+                    if (Rand.Chance(poiDef.spawnChance))
                     {
                         spawnAttempts++;
                         IntVec3 centerPos = new IntVec3(x + Rand.Range(0, gridSize), 0, z + Rand.Range(0, gridSize));
@@ -144,18 +115,18 @@ namespace MiningOverhaul
             foreach (IntVec3 usedPos in usedPositions)
             {
                 float distance = pos.DistanceTo(usedPos);
-                if (distance < genStepDef.minDistanceBetweenPOIs)
+                if (distance < poiDef.minDistance)
                     return false;
             }
 
             // Check distance from cave entrance if specified
-            if (genStepDef.minDistanceFromEntrance > 0f)
+            if (poiDef.minDistanceFromEntrance > 0f)
             {
                 IntVec3 entrancePos = FindCaveEntrance();
                 if (entrancePos != IntVec3.Invalid)
                 {
                     float entranceDistance = pos.DistanceTo(entrancePos);
-                    if (entranceDistance < genStepDef.minDistanceFromEntrance)
+                    if (entranceDistance < poiDef.minDistanceFromEntrance)
                         return false;
                 }
             }
@@ -199,316 +170,130 @@ namespace MiningOverhaul
 
             // Track positions used by THIS POI to avoid overlap
             List<IntVec3> thisPOIPositions = new List<IntVec3>();
-            int groupsSpawned = 0;
-
-            // Spawn each group
-            foreach (POISpawnGroup group in genStepDef.poiContent.spawnGroups)
-            {
-                // Check if this group should spawn
-                if (Rand.Chance(group.spawnChance))
-                {
-                    SpawnGroup(group, centerPos, thisPOIPositions);
-                    groupsSpawned++;
-                }
-            }
-            
-            MOLog.Message($"POI at {centerPos}: {groupsSpawned} groups spawned, {thisPOIPositions.Count} items placed");
-        }
-        
-        private void SpawnGroup(POISpawnGroup group, IntVec3 centerPos, List<IntVec3> thisPOIPositions)
-        {
-            // Get positions for this group based on pattern
-            List<IntVec3> groupPositions = GetGroupPositions(group, centerPos, thisPOIPositions);
-            
             int itemsSpawned = 0;
-            int animalsSpawned = 0;
-            
-            // Spawn regular items/terrain
-            foreach (POISpawnOption option in group.spawnOptions)
+
+            // Spawn core items first
+            foreach (POIItem item in poiDef.coreItems)
             {
-                int thingsToSpawn = option.thingCount.RandomInRange;
-                
-                for (int i = 0; i < thingsToSpawn; i++)
+                int countToSpawn = item.count.RandomInRange;
+                for (int i = 0; i < countToSpawn; i++)
                 {
-                    IntVec3 spawnPos = GetBestPositionFromList(groupPositions, thisPOIPositions);
-                    if (spawnPos != IntVec3.Invalid)
+                    IntVec3 spawnPos = GetSpawnPosition(centerPos, 1f, thisPOIPositions);
+                    if (spawnPos.IsValid && SpawnItem(item, spawnPos))
                     {
-                        bool success = SpawnSingleThing(option, spawnPos);
-                        if (success)
-                        {
-                            itemsSpawned++;
-                            thisPOIPositions.Add(spawnPos);
-                            groupPositions.Remove(spawnPos);
-                        }
-                    }
-                    else
-                    {
-                        MOLog.Message($"No valid position for {option.thingDef?.defName}");
+                        thisPOIPositions.Add(spawnPos);
+                        itemsSpawned++;
                     }
                 }
             }
 
-            // Spawn animals
-            foreach (POIAnimalOption option in group.animalOptions)
+            // Spawn nearby items around the core
+            foreach (POIItem item in poiDef.nearbyItems)
             {
-                int animalsToSpawn = option.animalCount.RandomInRange;
-                
-                for (int i = 0; i < animalsToSpawn; i++)
+                int countToSpawn = item.count.RandomInRange;
+                for (int i = 0; i < countToSpawn; i++)
                 {
-                    IntVec3 spawnPos = GetBestPositionFromList(groupPositions, thisPOIPositions);
-                    if (spawnPos != IntVec3.Invalid)
+                    IntVec3 spawnPos = GetSpawnPosition(centerPos, poiDef.nearbyRadius, thisPOIPositions);
+                    if (spawnPos.IsValid && SpawnItem(item, spawnPos))
                     {
-                        bool success = SpawnSingleAnimal(option, spawnPos);
-                        if (success)
-                        {
-                            animalsSpawned++;
-                            thisPOIPositions.Add(spawnPos);
-                            groupPositions.Remove(spawnPos);
-                        }
-                    }
-                    else
-                    {
-                        MOLog.Message($"No valid position for {option.pawnKindDef?.defName}");
+                        thisPOIPositions.Add(spawnPos);
+                        itemsSpawned++;
                     }
                 }
             }
             
-            if (itemsSpawned > 0 || animalsSpawned > 0)
-                MOLog.Message($"Group '{group.label}': {itemsSpawned} items, {animalsSpawned} animals");
+            MOLog.Message($"POI at {centerPos}: {itemsSpawned} items spawned");
         }
         
-        private List<IntVec3> GetGroupPositions(POISpawnGroup group, IntVec3 centerPos, List<IntVec3> usedPositions)
+        private IntVec3 GetSpawnPosition(IntVec3 center, float radius, List<IntVec3> usedPositions)
         {
-            List<IntVec3> positions = new List<IntVec3>();
-            int maxRadius = Mathf.RoundToInt(group.groupRadius);
+            int maxRadius = Mathf.RoundToInt(radius);
             
-            switch (group.pattern)
-            {
-                case SpawnPattern.Clustered:
-                    // Get nearby positions, favor closer ones
-                    for (int radius = 0; radius <= maxRadius; radius++)
-                    {
-                        foreach (IntVec3 cell in GenRadial.RadialCellsAround(centerPos, radius, true))
-                        {
-                            if (cell.InBounds(map) && IsValidSpawnSpot(cell, usedPositions))
-                            {
-                                positions.Add(cell);
-                            }
-                        }
-                    }
-                    break;
-                    
-                case SpawnPattern.Scattered:
-                    // Get random positions within radius
-                    for (int attempts = 0; attempts < 50; attempts++)
-                    {
-                        IntVec3 randomCell = centerPos + GenRadial.RadialPattern[Rand.Range(0, GenRadial.NumCellsInRadius(maxRadius))];
-                        if (randomCell.InBounds(map) && IsValidSpawnSpot(randomCell, usedPositions))
-                        {
-                            positions.Add(randomCell);
-                        }
-                    }
-                    break;
-                    
-                case SpawnPattern.Ring:
-                    // Get positions in a ring around the center
-                    int ringRadius = Mathf.Max(1, maxRadius - 1);
-                    foreach (IntVec3 cell in GenRadial.RadialCellsAround(centerPos, ringRadius, false))
-                    {
-                        if (cell.InBounds(map) && IsValidSpawnSpot(cell, usedPositions))
-                        {
-                            positions.Add(cell);
-                        }
-                    }
-                    break;
-                    
-                case SpawnPattern.Line:
-                    // Get positions in a rough line
-                    Rot4 direction = Rot4.Random;
-                    for (int i = 0; i < maxRadius; i++)
-                    {
-                        IntVec3 linePos = centerPos + (direction.FacingCell * i);
-                        if (linePos.InBounds(map) && IsValidSpawnSpot(linePos, usedPositions))
-                        {
-                            positions.Add(linePos);
-                        }
-                        // Add some randomness to the line
-                        IntVec3 offsetPos = linePos + GenRadial.RadialPattern[Rand.Range(0, 9)];
-                        if (offsetPos.InBounds(map) && IsValidSpawnSpot(offsetPos, usedPositions))
-                        {
-                            positions.Add(offsetPos);
-                        }
-                    }
-                    break;
-            }
-            
-            return positions;
-        }
-        
-        private IntVec3 GetBestPositionFromList(List<IntVec3> positions, List<IntVec3> usedPositions)
-        {
-            if (positions.NullOrEmpty()) return IntVec3.Invalid;
-            
-            // Try to find a position that's not used
-            foreach (IntVec3 pos in positions)
-            {
-                if (!usedPositions.Contains(pos))
-                {
-                    return pos;
-                }
-            }
-            
-            // If all positions are used, return the first one anyway
-            return positions.First();
-        }
-
-        private IntVec3 GetSpawnPositionNear(IntVec3 center, float density, List<IntVec3> usedPositionsThisPOI)
-        {
-            // Try to find a valid spot within density radius
-            int maxRadius = Mathf.RoundToInt(density);
-            
+            // Try to find a valid spot within radius
             for (int attempts = 0; attempts < 20; attempts++)
             {
                 IntVec3 candidate = center + GenRadial.RadialPattern[Rand.Range(0, GenRadial.NumCellsInRadius(maxRadius))];
                 
-                if (candidate.InBounds(map) && IsValidSpawnSpot(candidate, usedPositionsThisPOI))
+                if (candidate.InBounds(map) && IsValidSpawnSpot(candidate, usedPositions))
                 {
                     return candidate;
                 }
             }
             
-            // Fallback to center if no good spot found
-            return center.InBounds(map) && IsValidSpawnSpot(center, usedPositionsThisPOI) ? center : IntVec3.Invalid;
+            return IntVec3.Invalid;
         }
 
-        private bool IsValidSpawnSpot(IntVec3 pos, List<IntVec3> usedPositionsThisPOI)
+        private bool IsValidSpawnSpot(IntVec3 pos, List<IntVec3> usedPositions)
         {
-            // Basic validity checks
             if (!pos.InBounds(map) || pos.Filled(map))
                 return false;
 
-            // Check if we already used this position for this POI
-            if (usedPositionsThisPOI.Contains(pos))
+            // Check if we already used this position
+            if (usedPositions.Contains(pos))
                 return false;
 
-            // Check if there's already a plant or pawn here
+            // Check for blocking things
             List<Thing> thingsHere = map.thingGrid.ThingsListAt(pos);
             foreach (Thing thing in thingsHere)
             {
-                if (thing.def.category == ThingCategory.Plant || thing.def.category == ThingCategory.Pawn)
+                if (thing.def.category == ThingCategory.Building || 
+                    thing.def.category == ThingCategory.Pawn ||
+                    thing.def.passability == Traversability.Impassable)
                     return false;
             }
 
             return true;
         }
-
-        private bool SpawnSingleAnimal(POIAnimalOption animalOption, IntVec3 pos)
-        {
-            if (animalOption.pawnKindDef == null)
-            {
-                MOLog.Error($"Null pawnKindDef in animal option");
-                return false;
-            }
-
-            try
-            {
-                // Get faction (null = wild animals)
-                Faction faction = null;
-                if (!animalOption.faction.NullOrEmpty() && animalOption.faction != "null")
-                {
-                    faction = Find.FactionManager.FirstFactionOfDef(FactionDef.Named(animalOption.faction));
-                    if (faction == null)
-                        MOLog.Warning($"Faction '{animalOption.faction}' not found");
-                }
-
-                // Generate the pawn
-                PawnGenerationRequest request = new PawnGenerationRequest(
-                    animalOption.pawnKindDef,
-                    faction: faction,
-                    context: PawnGenerationContext.NonPlayer,
-                    tile: map.Tile,
-                    forceGenerateNewPawn: true,
-                    fixedGender: animalOption.gender
-                );
-
-                Pawn pawn = PawnGenerator.GeneratePawn(request);
-                if (pawn == null)
-                {
-                    MOLog.Error($"Failed to generate pawn of type {animalOption.pawnKindDef.defName}");
-                    return false;
-                }
-
-                // Set age
-                float targetAge = pawn.RaceProps.lifeExpectancy * animalOption.ageRange.RandomInRange;
-                pawn.ageTracker.AgeBiologicalTicks = (long)(targetAge * 3600000f);
-                pawn.ageTracker.AgeChronologicalTicks = pawn.ageTracker.AgeBiologicalTicks;
-
-                // Spawn the animal
-                GenSpawn.Spawn(pawn, pos, map);
-                return true;
-            }
-            catch (System.Exception e)
-            {
-                MOLog.Error($"Exception spawning {animalOption.pawnKindDef?.defName}: {e.Message}");
-                return false;
-            }
-        }
-
-        private bool SpawnSingleThing(POISpawnOption option, IntVec3 pos)
+        
+        private bool SpawnItem(POIItem item, IntVec3 pos)
         {
             try
             {
-                if (option.thingDef != null)
+                // Handle creatures
+                if (item.pawnKindDef != null)
                 {
-                    Thing thing = ThingMaker.MakeThing(option.thingDef);
+                    Pawn pawn = PawnGenerator.GeneratePawn(item.pawnKindDef);
+                    if (pawn == null)
+                    {
+                        MOLog.Error($"Failed to generate pawn of type {item.pawnKindDef.defName}");
+                        return false;
+                    }
+                    
+                    GenSpawn.Spawn(pawn, pos, map);
+                    return true;
+                }
+                
+                // Handle things (items, buildings, filth)
+                if (item.thingDef != null)
+                {
+                    Thing thing = ThingMaker.MakeThing(item.thingDef);
                     if (thing == null)
                     {
-                        MOLog.Error($"Failed to make thing of type {option.thingDef.defName}");
+                        MOLog.Error($"Failed to make thing of type {item.thingDef.defName}");
                         return false;
                     }
 
-                    // Set stack count
+                    // Set stack count for stackable items
                     if (thing.def.stackLimit > 1)
                     {
-                        int stackSize = option.stackCount.RandomInRange;
+                        int stackSize = item.stackCount.RandomInRange;
                         thing.stackCount = Mathf.Min(stackSize, thing.def.stackLimit);
-                    }
-
-                    // Set quality if applicable
-                    CompQuality qualityComp = thing.TryGetComp<CompQuality>();
-                    if (qualityComp != null && option.qualityRange != QualityRange.All)
-                    {
-                        var validQualities = System.Enum.GetValues(typeof(QualityCategory))
-                            .Cast<QualityCategory>()
-                            .Where(q => option.qualityRange.Includes(q))
-                            .ToArray();
-                        
-                        if (validQualities.Length > 0)
-                        {
-                            QualityCategory randomQuality = validQualities.RandomElement();
-                            qualityComp.SetQuality(randomQuality, ArtGenerationContext.Outsider);
-                        }
                     }
 
                     GenSpawn.Spawn(thing, pos, map);
                     return true;
                 }
-                else if (option.terrainDef != null)
-                {
-                    map.terrainGrid.SetTerrain(pos, option.terrainDef);
-                    return true;
-                }
-                else
-                {
-                    MOLog.Error($"POI spawn option has neither thingDef nor terrainDef");
-                    return false;
-                }
+                
+                MOLog.Error($"POI item has neither thingDef nor pawnKindDef");
+                return false;
             }
             catch (System.Exception e)
             {
-                MOLog.Error($"Exception spawning thing {option.thingDef?.defName}: {e.Message}");
+                MOLog.Error($"Exception spawning item: {e.Message}");
                 return false;
             }
         }
+        
+        // Removed all the old complex spawn methods - replaced with simple SpawnItem method above
     }
 }
