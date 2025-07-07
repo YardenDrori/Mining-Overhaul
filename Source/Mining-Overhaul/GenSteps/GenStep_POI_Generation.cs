@@ -16,6 +16,8 @@ namespace MiningOverhaul
         public List<POIItem> nearbyItems = new List<POIItem>(); // Spawns near core (jelly, decorations, etc.)
         public float nearbyRadius = 3f;                        // Radius for nearby items
         public List<string> allowedBiomes = new List<string>(); // empty = all biomes
+        public int minCount = 0;                               // Minimum number of this POI type to spawn
+        public int maxCount = 999;                             // Maximum number of this POI type to spawn
     }
 
     // Simple item definition - handles both things and creatures
@@ -66,33 +68,114 @@ namespace MiningOverhaul
                 // For now, always allow
             }
 
-            GeneratePOIs();
+            int spawnedCount = GeneratePOIs();
             
             if (MiningOverhaulMod.settings.verboseLogging)
             {
-                MOLog.Message($"POI Summary: {poiDef.defName} spawned {usedPositions.Count} instances");
+                MOLog.Message($"POI Summary: {poiDef.defName} spawned {spawnedCount} instances (target: {poiDef.minCount}-{poiDef.maxCount})");
             }
         }
 
-        private void GeneratePOIs()
+        private int GeneratePOIs()
         {
             int gridSize = Mathf.RoundToInt(poiDef.minDistance);
             if (gridSize < 1) gridSize = 1;
 
-            // Spawn POIs based on grid with random chances
-            for (int x = 0; x < map.Size.x; x += gridSize)
+            int currentCount = 0;
+            List<IntVec3> allCandidatePositions = new List<IntVec3>();
+
+            // First pass: collect all valid candidate positions
+            // For dense coverage (like vegetation), use smaller grid or random positions
+            bool isDenseVegetation = poiDef.defName.Contains("Plant") && poiDef.minDistance <= 5;
+            
+            if (isDenseVegetation)
             {
-                for (int z = 0; z < map.Size.z; z += gridSize)
+                // For vegetation, sample more positions with smaller grid
+                int smallGrid = Mathf.Max(1, gridSize / 2);
+                for (int x = 0; x < map.Size.x; x += smallGrid)
                 {
-                    IntVec3 centerPos = new IntVec3(x + Rand.Range(0, gridSize), 0, z + Rand.Range(0, gridSize));
-                    centerPos = centerPos.ClampInsideMap(map);
-                    
-                    if (IsValidPOISpot(centerPos) && Rand.Chance(poiDef.spawnChance))
+                    for (int z = 0; z < map.Size.z; z += smallGrid)
                     {
-                        SpawnPOI(centerPos);
+                        IntVec3 centerPos = new IntVec3(x + Rand.Range(0, smallGrid), 0, z + Rand.Range(0, smallGrid));
+                        centerPos = centerPos.ClampInsideMap(map);
+                        
+                        if (IsValidPOISpot(centerPos))
+                        {
+                            allCandidatePositions.Add(centerPos);
+                        }
                     }
                 }
             }
+            else
+            {
+                // Standard grid for other POI types
+                for (int x = 0; x < map.Size.x; x += gridSize)
+                {
+                    for (int z = 0; z < map.Size.z; z += gridSize)
+                    {
+                        IntVec3 centerPos = new IntVec3(x + Rand.Range(0, gridSize), 0, z + Rand.Range(0, gridSize));
+                        centerPos = centerPos.ClampInsideMap(map);
+                        
+                        if (IsValidPOISpot(centerPos))
+                        {
+                            allCandidatePositions.Add(centerPos);
+                        }
+                    }
+                }
+            }
+
+            // Shuffle candidates for random selection
+            allCandidatePositions.Shuffle();
+            
+            if (MiningOverhaulMod.settings.verboseLogging)
+            {
+                MOLog.Message($"POI {poiDef.defName}: Found {allCandidatePositions.Count} candidate positions");
+            }
+
+            // Try to spawn POIs respecting min/max constraints
+            int maxRetries = allCandidatePositions.Count * 3; // Allow more retries than positions
+            int retryCount = 0;
+            
+            foreach (IntVec3 candidatePos in allCandidatePositions)
+            {
+                if (currentCount >= poiDef.maxCount)
+                    break;
+
+                if (Rand.Chance(poiDef.spawnChance) && IsValidPOISpot(candidatePos))
+                {
+                    if (TrySpawnPOI(candidatePos))
+                    {
+                        currentCount++;
+                    }
+                }
+            }
+
+            // If we haven't met minimum requirements, try harder
+            while (currentCount < poiDef.minCount && retryCount < maxRetries)
+            {
+                foreach (IntVec3 candidatePos in allCandidatePositions)
+                {
+                    if (currentCount >= poiDef.maxCount)
+                        break;
+
+                    if (!usedPositions.Contains(candidatePos) && IsValidPOISpot(candidatePos))
+                    {
+                        if (TrySpawnPOI(candidatePos))
+                        {
+                            currentCount++;
+                            break;
+                        }
+                    }
+                }
+                retryCount++;
+            }
+
+            if (MiningOverhaulMod.settings.verboseLogging && currentCount < poiDef.minCount)
+            {
+                MOLog.Warning($"POI {poiDef.defName}: Only spawned {currentCount}/{poiDef.minCount} minimum required after {retryCount} retries");
+            }
+
+            return currentCount;
         }
 
         private bool IsValidPOISpot(IntVec3 pos)
@@ -152,10 +235,8 @@ namespace MiningOverhaul
             return map.Center;
         }
 
-        private void SpawnPOI(IntVec3 centerPos)
+        private bool TrySpawnPOI(IntVec3 centerPos)
         {
-            usedPositions.Add(centerPos);
-            
             List<IntVec3> thisPOIPositions = new List<IntVec3>();
             int itemsSpawned = 0;
 
@@ -193,18 +274,27 @@ namespace MiningOverhaul
                 }
             }
 
+            // Only add to usedPositions if we actually spawned something
+            bool success = itemsSpawned > 0;
+            if (success)
+            {
+                usedPositions.Add(centerPos);
+            }
+
             // Log result
             if (MiningOverhaulMod.settings.verboseLogging)
             {
-                if (itemsSpawned > 0)
+                if (success)
                 {
                     MOLog.Message($"POI Spawned: {poiDef.defName} with {itemsSpawned} items at {centerPos}");
                 }
                 else
                 {
-                    MOLog.Warning($"POI Empty: {poiDef.defName} - No items spawned at {centerPos}");
+                    MOLog.Warning($"POI Empty: {poiDef.defName} - No items spawned at {centerPos} (tried {poiDef.coreItems.Count} core item types)");
                 }
             }
+
+            return success;
         }
         
         private IntVec3 GetSpawnPosition(IntVec3 center, float radius, List<IntVec3> usedPositions)
@@ -257,7 +347,8 @@ namespace MiningOverhaul
                     Pawn pawn = PawnGenerator.GeneratePawn(item.pawnKindDef);
                     if (pawn == null)
                     {
-                        MOLog.Error($"Failed to generate pawn of type {item.pawnKindDef.defName}");
+                        if (MiningOverhaulMod.settings.verboseLogging)
+                            MOLog.Error($"Failed to generate pawn of type {item.pawnKindDef.defName}");
                         return false;
                     }
                     
@@ -271,7 +362,8 @@ namespace MiningOverhaul
                     Thing thing = ThingMaker.MakeThing(item.thingDef);
                     if (thing == null)
                     {
-                        MOLog.Error($"Failed to make thing of type {item.thingDef.defName}");
+                        if (MiningOverhaulMod.settings.verboseLogging)
+                            MOLog.Error($"Failed to make thing of type {item.thingDef.defName} - ThingMaker returned null");
                         return false;
                     }
 
@@ -283,15 +375,19 @@ namespace MiningOverhaul
                     }
 
                     GenSpawn.Spawn(thing, pos, map);
+                    if (MiningOverhaulMod.settings.verboseLogging)
+                        MOLog.Message($"Successfully spawned {thing.def.defName} at {pos}");
                     return true;
                 }
                 
-                MOLog.Error($"POI item has neither thingDef nor pawnKindDef");
+                if (MiningOverhaulMod.settings.verboseLogging)
+                    MOLog.Error($"POI item has neither thingDef nor pawnKindDef");
                 return false;
             }
             catch (System.Exception e)
             {
-                MOLog.Error($"Exception spawning item: {e.Message}");
+                if (MiningOverhaulMod.settings.verboseLogging)
+                    MOLog.Error($"Exception spawning item: {e.Message}");
                 return false;
             }
         }

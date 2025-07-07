@@ -26,20 +26,4 @@
     </genStep>
   </GenStepDef>
 
-  <GenStepDef>
-    <defName>CaveResourceCaches</defName>
-    <order>453</order>
-    <genStep Class="MiningOverhaul.GenStep_POIGeneration">
-        <poiDef>MO_ResourceCache</poiDef>
-    </genStep>
-  </GenStepDef>
-
-  <GenStepDef>
-    <defName>CaveCreatureLairs</defName>
-    <order>454</order>
-    <genStep Class="MiningOverhaul.GenStep_POIGeneration">
-        <poiDef>MO_CreatureLair</poiDef>
-    </genStep>
-  </GenStepDef>
-
 </Defs>
