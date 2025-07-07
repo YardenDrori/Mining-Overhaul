@@ -25,6 +25,7 @@ namespace MiningOverhaul
         public float maxCreaturesSpawned = 1f;
         public float spawnIntervalHours = 2f;
         public float spawnChance = 1f;
+        public float instabilityMultiplier = 1f;    // How much this tier responds to instability
     }
 
     [System.Serializable]
@@ -32,7 +33,6 @@ namespace MiningOverhaul
     {
         public string label = "Spawn Group";
         public List<ThreatTier> threatTiers = new List<ThreatTier>();
-        public float instabilityMultiplier = 1f;
     }
 
     public class CompProperties_CavernCreatureSpawner : CompProperties
@@ -335,21 +335,24 @@ namespace MiningOverhaul
             // Logarithmic curve provides fast early ramp, controlled late game
             float scaledInstability = Mathf.Log(1 + spawnInstability * ((float)Math.E - 1));
             
-            // Find the config this tier belongs to for the multiplier
-            float multiplier = 1f;
-            foreach (var config in Props.spawnConfigs)
-            {
-                if (config.threatTiers.Contains(tier))
-                {
-                    multiplier = config.instabilityMultiplier;
-                    break;
-                }
-            }
+            // Use the tier's own instability multiplier
+            float multiplier = tier.instabilityMultiplier;
             
-            float spawnRate = tier.maxCreaturesSpawned * scaledInstability * multiplier;
+            // Baseline + Instability Bonus system
+            // Baseline: Natural ecosystem that exists even in stable caves (30% of max)
+            float baselineSpawns = tier.maxCreaturesSpawned * 0.3f;
             
-            // Ensure at least 1 creature if instability > 0
-            return currentInstability > 0f ? Mathf.Max(1, Mathf.RoundToInt(spawnRate)) : 0;
+            // Instability Bonus: Extra spawning driven by cave disturbance
+            // multiplier = 0: No instability effect (always baseline)
+            // multiplier = 1: Normal instability response 
+            // multiplier = 2: Strong instability response
+            float instabilityBonus = tier.maxCreaturesSpawned * scaledInstability * multiplier;
+            
+            // Total spawn rate combines both
+            float spawnRate = baselineSpawns + instabilityBonus;
+            
+            // Always spawn at least 1 if any spawning should occur
+            return spawnRate > 0f ? Mathf.Max(1, Mathf.RoundToInt(spawnRate)) : 0;
         }
 
         private IntVec3 ChooseSpawnCell(List<Pawn> alreadySpawned)
