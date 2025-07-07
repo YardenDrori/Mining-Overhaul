@@ -3,66 +3,104 @@
   <!-- INSECT HIVE ENCOUNTERS - Dangerous but rewarding -->
   <MiningOverhaul.SimplePOIDef>
     <defName>MO_InsectHiveEncounter</defName>
-    <spawnChance>0.15</spawnChance>                      <!-- 15% chance per grid cell -->
-    <minDistance>20</minDistance>                        <!-- Keep hives far apart -->
-    <minDistanceFromEntrance>20</minDistanceFromEntrance> <!-- Don't spawn near entrance -->
-    <nearbyRadius>4</nearbyRadius>
-    <minCount>2</minCount>                               <!-- At least 1 hive encounter -->
-    <maxCount>4</maxCount>                               <!-- At most 3 hive encounters -->
-    <coreItems>
-      <li><thingDef>Hive</thingDef><count>1~2</count></li>
-      <li><pawnKindDef>Megascarab</pawnKindDef><count>1~4</count></li>
-      <li><pawnKindDef>Spelopede</pawnKindDef><count>1~2</count></li>
-    </coreItems>
-    <nearbyItems>
-      <li><thingDef>InsectJelly</thingDef><count>1~3</count><stackCount>5~15</stackCount></li>
-      <li><thingDef>GlowPod</thingDef><count>1~3</count></li>
-      <li><thingDef>Filth_Slime</thingDef><count>3~8</count></li>
-    </nearbyItems>
+    <behavior>Encounter</behavior>                        <!-- Large spacing, avoids entrance -->
+    <rarity>Rare</rarity>                               <!-- Spawns rarely -->
+    <minCount>2</minCount>                              <!-- At least 1 retries untill hits quota-->
+    <maxCount>3</maxCount>                              <!-- At most 3 -->
+    <spawnGroups>
+      <!-- Main hive structure -->
+      <li>
+        <groupName>hive_core</groupName>
+        <radius>2</radius>
+        <importance>Required</importance>
+        <items>
+          <li><thingDef>Hive</thingDef><count>1~2</count><chance>1.0</chance></li>
+          <li><pawnKindDef>Megascarab</pawnKindDef><count>2~5</count><chance>0.8</chance></li>
+          <li><pawnKindDef>Spelopede</pawnKindDef><count>1~2</count><chance>0.6</chance></li>
+        </items>
+      </li>
+      <!-- Surrounding loot and atmosphere -->
+      <li>
+        <groupName>hive_loot</groupName>
+        <radius>6</radius>
+        <importance>Optional</importance>
+        <items>
+          <li><thingDef>InsectJelly</thingDef><count>1~3</count><stackCount>5~15</stackCount><chance>0.7</chance></li>
+          <li><thingDef>GlowPod</thingDef><count>1~3</count><chance>0.5</chance></li>
+          <li><thingDef>Filth_Slime</thingDef><count>3~8</count><chance>0.8</chance></li>
+        </items>
+      </li>
+    </spawnGroups>
   </MiningOverhaul.SimplePOIDef>
 
-  <!-- PLANT CLUSTERS - Decorative vegetation -->
+  <!-- COMMON GRASS - Dense ground vegetation -->
   <MiningOverhaul.SimplePOIDef>
-    <defName>MO_PlantCluster</defName>
-    <spawnChance>0.85</spawnChance>                      <!-- 25% chance per grid cell -->
-    <minDistance>4</minDistance>                         <!-- Plants reasonably spaced -->
-    <nearbyRadius>4</nearbyRadius>
-    <minCount>3</minCount>                               <!-- At least 3 plant clusters -->
-    <maxCount>999</maxCount>                               <!-- At most 8 plant clusters -->
-    <coreItems>
-      <li><thingDef>Plant_Grass</thingDef><count>5~10</count></li>
-      <li><thingDef>Agarilux</thingDef><count>0~1</count></li>
-      <li><thingDef>Plant_Alocasia</thingDef><count>5~10</count></li>
-      <li><thingDef>Plant_Berry</thingDef><count>0~2</count></li>
-      <li><thingDef>Bryolux</thingDef><count>3~12</count></li>
-      <li><thingDef>Plant_Bush</thingDef><count>1~3</count></li>
-      <li><thingDef>Plant_Chokevine</thingDef><count>6~8</count></li>
-      <li><thingDef>Plant_Clivia</thingDef><count>4~8</count></li>
-      <li><thingDef>Plant_Rafflesia</thingDef><count>0~1</count></li>
-      <li><thingDef>Glowstool</thingDef><count>0~1</count></li>
-      <li><thingDef>Plant_ShrubLow</thingDef><count>2~6</count></li>
-      <li><thingDef>Plant_Moss</thingDef><count>2~10</count></li>
-      <li><thingDef>Plant_TallGrass</thingDef><count>2~6</count></li>
-    </coreItems>
-    <nearbyItems>
-      <li><thingDef>Plant_Rose</thingDef><count>1~2</count></li>
-    </nearbyItems>
+    <defName>MO_CommonGrass</defName>
+    <behavior>Vegetation</behavior>                      <!-- Small spacing, dense coverage -->
+    <rarity>VeryCommon</rarity>                         <!-- Spawns very often -->
+    <minCount>8</minCount>                              <!-- Lots of grass patches -->
+    <maxCount>999</maxCount>
+    <spawnGroups>
+      <li>
+        <groupName>grass_patch</groupName>
+        <radius>5</radius>
+        <importance>Required</importance>
+        <items>
+          <li><thingDef>Plant_Grass</thingDef><count>5~12</count><chance>1.0</chance></li>
+          <li><thingDef>Plant_Moss</thingDef><count>3~8</count><chance>0.9</chance></li>
+          <li><thingDef>Plant_TallGrass</thingDef><count>2~6</count><chance>0.9</chance></li>
+        </items>
+      </li>
+    </spawnGroups>
+  </MiningOverhaul.SimplePOIDef>
+
+  <!-- RARE SPECIAL MUSHROOM - Same vegetation pattern but very rare -->
+  <MiningOverhaul.SimplePOIDef>
+    <defName>MO_RareMushroom</defName>
+    <behavior>Vegetation</behavior>                      <!-- Same vegetation pattern -->
+    <rarity>VeryRare</rarity>                           <!-- But very rare -->
+    <minCount>0</minCount>                              <!-- Might not spawn at all -->
+    <maxCount>999</maxCount>                              <!-- At most 2 -->
+    <spawnGroups>
+      <li>
+        <groupName>special_mushroom</groupName>
+        <radius>1</radius>
+        <importance>Required</importance>
+        <items>
+          <li><thingDef>Glowstool</thingDef><count>1~3</count><chance>1.0</chance></li>
+          <li><thingDef>Agarilux</thingDef><count>0~1</count><chance>0.3</chance></li>
+        </items>
+      </li>
+    </spawnGroups>
   </MiningOverhaul.SimplePOIDef>
 
   <!-- BRAMBLE THICKETS - Natural barriers -->
   <MiningOverhaul.SimplePOIDef>
     <defName>MO_BrambleThicket</defName>
-    <spawnChance>0.20</spawnChance>                      <!-- 20% chance per grid cell -->
-    <minDistance>12</minDistance>                        <!-- Thickets reasonably spaced -->
-    <nearbyRadius>3</nearbyRadius>
-    <minCount>4</minCount>                               <!-- At least 2 bramble thickets -->
-    <maxCount>999</maxCount>                               <!-- At most 6 bramble thickets -->
-    <coreItems>
-      <li><thingDef>Plant_Brambles</thingDef><count>15~30</count></li>
-    </coreItems>
-    <nearbyItems>
-      <li><thingDef>Plant_Brambles</thingDef><count>3~8</count></li>
-    </nearbyItems>
+    <behavior>Vegetation</behavior>                      <!-- Vegetation pattern -->
+    <rarity>Uncommon</rarity>                           <!-- Less common than grass -->
+    <minCount>3</minCount>                              <!-- At least 3 thickets -->
+    <maxCount>8</maxCount>                              <!-- At most 8 -->
+    <spawnGroups>
+      <!-- Dense bramble core -->
+      <li>
+        <groupName>bramble_thicket</groupName>
+        <radius>3</radius>
+        <importance>Required</importance>
+        <items>
+          <li><thingDef>Plant_Brambles</thingDef><count>15~30</count><chance>1.0</chance></li>
+        </items>
+      </li>
+      <!-- Scattered brambles extending outward -->
+      <li>
+        <groupName>bramble_edges</groupName>
+        <radius>8</radius>
+        <importance>Optional</importance>
+        <items>
+          <li><thingDef>Plant_Brambles</thingDef><count>3~8</count><chance>0.6</chance></li>
+        </items>
+      </li>
+    </spawnGroups>
   </MiningOverhaul.SimplePOIDef>
 
 

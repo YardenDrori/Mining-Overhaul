@@ -13,5 +13,8 @@
     <defName>CaveVegetationBiome</defName>
     <label>Vegetation Choked Cavern</label>
     <description>TODO</description>
+    <baseWeatherCommonalities>
+      <CavernClear>1</CavernClear>
+    </baseWeatherCommonalities>
   </BiomeDef>
 </Defs>
