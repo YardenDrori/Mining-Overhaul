@@ -56,6 +56,9 @@ polish
 make caves draft on enter and if possible take camera with first entry
 remove creature spawn message
 figure out creature spawner SFX being weird
+make entrance have more light radius
+
+
 
 requirement per biome:
 main floor texture, secondery floor texture

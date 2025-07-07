@@ -22,10 +22,9 @@ namespace MiningOverhaul
         public float minInstability = 0f;
         public float maxInstability = 1f;
         public List<CreatureOption> creatures = new List<CreatureOption>();
-        public float maxCreaturesSpawned = 1f;
+        public IntRange creaturesSpawned = new IntRange(1, 1);  // Simple range instead of complex multiplier system
         public float spawnIntervalHours = 2f;
         public float spawnChance = 1f;
-        public float instabilityMultiplier = 1f;    // How much this tier responds to instability
     }
 
     [System.Serializable]
@@ -39,7 +38,6 @@ namespace MiningOverhaul
     {
         public List<SimpleCreatureSpawn> spawnConfigs = new List<SimpleCreatureSpawn>();
         public int avoidanceRadius = 5;
-        public bool debugMode = false;
 
         public CompProperties_CavernCreatureSpawner()
         {
@@ -61,7 +59,7 @@ namespace MiningOverhaul
         public override void PostSpawnSetup(bool respawningAfterLoad)
         {
             base.PostSpawnSetup(respawningAfterLoad);
-            if (Props.debugMode)
+            if (MiningOverhaulMod.settings.verboseLogging)
             {
                 MOLog.Message($"CompCavernCreatureSpawner: Component spawned, {Props.spawnConfigs.Count} configs loaded - waiting for pocket map");
             }
@@ -75,7 +73,7 @@ namespace MiningOverhaul
                 foreach (var tier in config.threatTiers)
                 {
                     CalculateNextSpawnTick(tier);
-                    if (Props.debugMode)
+                    if (MiningOverhaulMod.settings.verboseLogging)
                     {
                         MOLog.Message($"CompCavernCreatureSpawner: Initialized timer for {config.label} tier {tier.minInstability:P0}-{tier.maxInstability:P0}");
                     }
@@ -89,7 +87,7 @@ namespace MiningOverhaul
 
             if (CavernEntrance == null)
             {
-                if (Props.debugMode && Find.TickManager.TicksGame % 600 == 0) // Every 10 seconds
+                if (MiningOverhaulMod.settings.verboseLogging && Find.TickManager.TicksGame % 600 == 0) // Every 10 seconds
                 {
                     MOLog.Warning("CompCavernCreatureSpawner: CavernEntrance is null");
                 }
@@ -98,7 +96,7 @@ namespace MiningOverhaul
 
             if (!CavernEntrance.PocketMapExists)
             {
-                if (Props.debugMode && Find.TickManager.TicksGame % 600 == 0) // Every 10 seconds
+                if (MiningOverhaulMod.settings.verboseLogging && Find.TickManager.TicksGame % 600 == 0) // Every 10 seconds
                 {
                     MOLog.Message("CompCavernCreatureSpawner: No pocket map exists yet");
                 }
@@ -109,7 +107,7 @@ namespace MiningOverhaul
             if (nextSpawnTicks.Count == 0)
             {
                 InitializeSpawnTicks();
-                if (Props.debugMode)
+                if (MiningOverhaulMod.settings.verboseLogging)
                 {
                     MOLog.Message("CompCavernCreatureSpawner: Pocket map detected - initializing timers");
                 }
@@ -135,7 +133,7 @@ namespace MiningOverhaul
 
             foreach (var tier in tiersToSpawn)
             {
-                if (Props.debugMode)
+                if (MiningOverhaulMod.settings.verboseLogging)
                 {
                     MOLog.Message($"CompCavernCreatureSpawner: Timer triggered for tier {tier.minInstability:P0}-{tier.maxInstability:P0}");
                 }
@@ -170,7 +168,7 @@ namespace MiningOverhaul
             
             lastValidationTick = Find.TickManager.TicksGame;
             
-            if (Props.debugMode)
+            if (MiningOverhaulMod.settings.verboseLogging)
             {
                 MOLog.Message($"CompCavernCreatureSpawner: Updated spawn cells - {validSpawnCells.Count} valid positions");
             }
@@ -233,7 +231,7 @@ namespace MiningOverhaul
         {
             if (CavernEntrance == null || validSpawnCells.Count == 0)
             {
-                if (Props.debugMode)
+                if (MiningOverhaulMod.settings.verboseLogging)
                 {
                     MOLog.Warning($"CompCavernCreatureSpawner: Cannot spawn - CavernEntrance: {CavernEntrance != null}, ValidCells: {validSpawnCells.Count}");
                 }
@@ -245,7 +243,7 @@ namespace MiningOverhaul
             // Check if tier is valid for current instability
             if (currentInstability < tier.minInstability || currentInstability > tier.maxInstability)
             {
-                if (Props.debugMode)
+                if (MiningOverhaulMod.settings.verboseLogging)
                 {
                     MOLog.Message($"CompCavernCreatureSpawner: Tier skipped - instability {currentInstability:P1} outside range {tier.minInstability:P1}-{tier.maxInstability:P1}");
                 }
@@ -255,14 +253,14 @@ namespace MiningOverhaul
             // Roll spawn chance
             if (!Rand.Chance(tier.spawnChance))
             {
-                if (Props.debugMode)
+                if (MiningOverhaulMod.settings.verboseLogging)
                 {
                     MOLog.Message($"CompCavernCreatureSpawner: Tier failed spawn chance ({tier.spawnChance:P1})");
                 }
                 return;
             }
 
-            if (Props.debugMode)
+            if (MiningOverhaulMod.settings.verboseLogging)
             {
                 MOLog.Message($"CompCavernCreatureSpawner: Spawning from tier {tier.minInstability:P0}-{tier.maxInstability:P0}!");
             }
@@ -296,7 +294,7 @@ namespace MiningOverhaul
 
                 if (pawnKindDef == null)
                 {
-                    if (Props.debugMode)
+                    if (MiningOverhaulMod.settings.verboseLogging)
                     {
                         MOLog.Warning($"CompCavernCreatureSpawner: Could not find PawnKindDef '{chosenCreature.creatureDef}'");
                     }
@@ -328,31 +326,8 @@ namespace MiningOverhaul
 
         private int CalculateSpawnCount(ThreatTier tier, float currentInstability)
         {
-            // Allow instability >100% but cap spawning effectiveness at 100%
-            float spawnInstability = Mathf.Min(currentInstability, 1f);
-            
-            // Simple logarithmic scaling: 0% = 0 spawns, 100% = max spawns
-            // Logarithmic curve provides fast early ramp, controlled late game
-            float scaledInstability = Mathf.Log(1 + spawnInstability * ((float)Math.E - 1));
-            
-            // Use the tier's own instability multiplier
-            float multiplier = tier.instabilityMultiplier;
-            
-            // Baseline + Instability Bonus system
-            // Baseline: Natural ecosystem that exists even in stable caves (30% of max)
-            float baselineSpawns = tier.maxCreaturesSpawned * 0.3f;
-            
-            // Instability Bonus: Extra spawning driven by cave disturbance
-            // multiplier = 0: No instability effect (always baseline)
-            // multiplier = 1: Normal instability response 
-            // multiplier = 2: Strong instability response
-            float instabilityBonus = tier.maxCreaturesSpawned * scaledInstability * multiplier;
-            
-            // Total spawn rate combines both
-            float spawnRate = baselineSpawns + instabilityBonus;
-            
-            // Always spawn at least 1 if any spawning should occur
-            return spawnRate > 0f ? Mathf.Max(1, Mathf.RoundToInt(spawnRate)) : 0;
+            // Simple random range - no complex instability math
+            return tier.creaturesSpawned.RandomInRange;
         }
 
         private IntVec3 ChooseSpawnCell(List<Pawn> alreadySpawned)
@@ -390,7 +365,7 @@ namespace MiningOverhaul
             }
             catch (System.Exception ex)
             {
-                if (Props.debugMode)
+                if (MiningOverhaulMod.settings.verboseLogging)
                 {
                     MOLog.Error($"CompCavernCreatureSpawner: Failed to spawn {pawnKindDef.defName}: {ex.Message}");
                 }
@@ -412,7 +387,7 @@ namespace MiningOverhaul
                 {
                     pawn.mindState.mentalStateHandler.TryStartMentalState(manhunterState);
                     
-                    if (Props.debugMode)
+                    if (MiningOverhaulMod.settings.verboseLogging)
                     {
                         MOLog.Message($"CompCavernCreatureSpawner: Applied manhunter state to {pawn.def.label}");
                     }
@@ -457,7 +432,7 @@ namespace MiningOverhaul
             int intervalTicks = Mathf.RoundToInt(tier.spawnIntervalHours * 2500f);
             nextSpawnTicks[tier] = Find.TickManager.TicksGame + intervalTicks;
             
-            if (Props.debugMode)
+            if (MiningOverhaulMod.settings.verboseLogging)
             {
                 MOLog.Message($"CompCavernCreatureSpawner: Next spawn in {tier.spawnIntervalHours:F1} hours");
             }

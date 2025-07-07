@@ -21,7 +21,8 @@ namespace MiningOverhaul
             // Find any CavernEntrance that has this map as its pocket map
             foreach (Map parentMap in Find.Maps)
             {
-                var cavernEntrance = parentMap.listerThings?.ThingsOfDef(ThingDef.Named("CavernEntrance"))
+                // Look for ANY CavernEntrance type, not just specific defNames
+                var cavernEntrance = parentMap.listerThings?.AllThings
                     ?.OfType<CavernEntrance>()
                     ?.FirstOrDefault(c => c.GetPocketMap() == map);
                     

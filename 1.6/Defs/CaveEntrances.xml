@@ -65,34 +65,31 @@
         <comps>
         <li Class="MiningOverhaul.CompProperties_CavernCreatureSpawner">
             <avoidanceRadius>15</avoidanceRadius>
-            <debugMode>false</debugMode>
             <spawnConfigs>
                 <!-- Cave Evolution - All creature stages in one config -->
                 <li>
                     <label>Cave Evolution</label>
                     <threatTiers>
-                        <!-- Early Stage: Scavengers - Always present regardless of instability -->
+                        <!-- Early Stage: Scavengers - Always present -->
                         <li>
                             <minInstability>0.0</minInstability>
                             <maxInstability>0.75</maxInstability>
-                            <maxCreaturesSpawned>2</maxCreaturesSpawned>
-                            <spawnIntervalHours>4</spawnIntervalHours>
-                            <spawnChance>0.25</spawnChance>
-                            <instabilityMultiplier>0.0</instabilityMultiplier>  <!-- No instability response - always baseline -->
+                            <creaturesSpawned>1~3</creaturesSpawned>  <!-- Simple range: 1 to 3 creatures -->
+                            <spawnIntervalHours>2</spawnIntervalHours>
+                            <spawnChance>0.3</spawnChance>
                             <creatures>
-                                <li><creatureDef>Rat</creatureDef><weight>3</weight><manhunterChance>0.02</manhunterChance></li>
-                                <li><creatureDef>Squirrel</creatureDef><weight>2</weight><manhunterChance>0.02</manhunterChance></li>
+                                <li><creatureDef>Rat</creatureDef><weight>3</weight><manhunterChance>0.05</manhunterChance></li>
+                                <li><creatureDef>Squirrel</creatureDef><weight>2</weight><manhunterChance>0.05</manhunterChance></li>
                             </creatures>
                         </li>
                         
-                        <!-- Mid Stage: Opportunists - Mildly attracted to disturbance -->
+                        <!-- Mid Stage: Opportunists -->
                         <li>
                             <minInstability>0.25</minInstability>
                             <maxInstability>0.5</maxInstability>
-                            <maxCreaturesSpawned>2</maxCreaturesSpawned>
+                            <creaturesSpawned>1~2</creaturesSpawned>
                             <spawnIntervalHours>3</spawnIntervalHours>
                             <spawnChance>0.5</spawnChance>
-                            <instabilityMultiplier>0.5</instabilityMultiplier>  <!-- Mild instability response -->
                             <creatures>
                                 <li><creatureDef>Spelopede</creatureDef><weight>2</weight><manhunterChance>0.2</manhunterChance></li>
                                 <li><creatureDef>Megascarab</creatureDef><weight>3</weight><manhunterChance>0.3</manhunterChance></li>
@@ -100,14 +97,13 @@
                             </creatures>
                         </li>
                         
-                        <!-- Late Stage: Apex Predators - Strongly drawn to chaos -->
+                        <!-- Late Stage: Apex Predators -->
                         <li>
                             <minInstability>0.5</minInstability>
                             <maxInstability>0.75</maxInstability>
-                            <maxCreaturesSpawned>3</maxCreaturesSpawned>
+                            <creaturesSpawned>2~4</creaturesSpawned>
                             <spawnIntervalHours>2.5</spawnIntervalHours>
                             <spawnChance>0.7</spawnChance>
-                            <instabilityMultiplier>1</instabilityMultiplier>  <!-- Strong instability response -->
                             <creatures>
                                 <li><creatureDef>Spelopede</creatureDef><weight>3</weight><manhunterChance>0.7</manhunterChance></li>
                                 <li><creatureDef>Megascarab</creatureDef><weight>3</weight><manhunterChance>0.7</manhunterChance></li>
@@ -116,14 +112,13 @@
                             </creatures>
                         </li>
                         
-                        <!-- Final Stage: Ancient Horrors - Exponential response to deep disturbance -->
+                        <!-- Final Stage: Ancient Horrors -->
                         <li>
                             <minInstability>0.75</minInstability>
                             <maxInstability>1.0</maxInstability>
-                            <maxCreaturesSpawned>4</maxCreaturesSpawned>
+                            <creaturesSpawned>3~6</creaturesSpawned>
                             <spawnIntervalHours>1.5</spawnIntervalHours>
                             <spawnChance>0.8</spawnChance>
-                            <instabilityMultiplier>1.5</instabilityMultiplier>  <!-- Extreme instability response -->
                             <creatures>
                                 <li><creatureDef>Megaspider</creatureDef><weight>3</weight><manhunterChance>0.9</manhunterChance></li>
                                 <li><creatureDef>Spelopede</creatureDef><weight>2</weight><manhunterChance>0.8</manhunterChance></li>

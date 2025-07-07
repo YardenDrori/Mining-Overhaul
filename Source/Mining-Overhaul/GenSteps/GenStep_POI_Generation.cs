@@ -54,19 +54,24 @@ namespace MiningOverhaul
                 return;
             }
 
-            MOLog.Message($"Starting POI generation for {poiDef.defName} (chance: {poiDef.spawnChance:P1})");
+            if (MiningOverhaulMod.settings.verboseLogging)
+            {
+                MOLog.Message($"Starting POI generation: {poiDef.defName}");
+            }
 
             // Check biome restriction
             if (!poiDef.allowedBiomes.NullOrEmpty())
             {
-                MOLog.Message($"Biome restrictions: {string.Join(", ", poiDef.allowedBiomes)}");
                 // Add your cave biome detection here when ready
                 // For now, always allow
             }
 
             GeneratePOIs();
             
-            MOLog.Message($"POI generation complete. Spawned {usedPositions.Count} POIs of type {poiDef.defName}");
+            if (MiningOverhaulMod.settings.verboseLogging)
+            {
+                MOLog.Message($"POI Summary: {poiDef.defName} spawned {usedPositions.Count} instances");
+            }
         }
 
         private void GeneratePOIs()
@@ -74,37 +79,20 @@ namespace MiningOverhaul
             int gridSize = Mathf.RoundToInt(poiDef.minDistance);
             if (gridSize < 1) gridSize = 1;
 
-            int gridCells = 0;
-            int spawnAttempts = 0;
-            int validSpots = 0;
-            IntVec3 entrancePos = FindCaveEntrance();
-            
-            MOLog.Message($"Grid size: {gridSize}, Entrance at: {entrancePos}");
-
-            // Go through map in grid pattern
+            // Spawn POIs based on grid with random chances
             for (int x = 0; x < map.Size.x; x += gridSize)
             {
                 for (int z = 0; z < map.Size.z; z += gridSize)
                 {
-                    gridCells++;
+                    IntVec3 centerPos = new IntVec3(x + Rand.Range(0, gridSize), 0, z + Rand.Range(0, gridSize));
+                    centerPos = centerPos.ClampInsideMap(map);
                     
-                    // Roll for spawn chance
-                    if (Rand.Chance(poiDef.spawnChance))
+                    if (IsValidPOISpot(centerPos) && Rand.Chance(poiDef.spawnChance))
                     {
-                        spawnAttempts++;
-                        IntVec3 centerPos = new IntVec3(x + Rand.Range(0, gridSize), 0, z + Rand.Range(0, gridSize));
-                        centerPos = centerPos.ClampInsideMap(map);
-                        
-                        if (IsValidPOISpot(centerPos))
-                        {
-                            validSpots++;
-                            SpawnPOI(centerPos);
-                        }
+                        SpawnPOI(centerPos);
                     }
                 }
             }
-            
-            MOLog.Message($"POI Generation Stats: {gridCells} grid cells, {spawnAttempts} spawn attempts, {validSpots} valid spots, {usedPositions.Count} POIs spawned");
         }
 
         private bool IsValidPOISpot(IntVec3 pos)
@@ -167,8 +155,7 @@ namespace MiningOverhaul
         private void SpawnPOI(IntVec3 centerPos)
         {
             usedPositions.Add(centerPos);
-
-            // Track positions used by THIS POI to avoid overlap
+            
             List<IntVec3> thisPOIPositions = new List<IntVec3>();
             int itemsSpawned = 0;
 
@@ -205,12 +192,19 @@ namespace MiningOverhaul
                     }
                 }
             }
-            else
+
+            // Log result
+            if (MiningOverhaulMod.settings.verboseLogging)
             {
-                MOLog.Warning($"POI at {centerPos}: No core items spawned, skipping nearby items");
+                if (itemsSpawned > 0)
+                {
+                    MOLog.Message($"POI Spawned: {poiDef.defName} with {itemsSpawned} items at {centerPos}");
+                }
+                else
+                {
+                    MOLog.Warning($"POI Empty: {poiDef.defName} - No items spawned at {centerPos}");
+                }
             }
-            
-            MOLog.Message($"POI at {centerPos}: {itemsSpawned} items spawned");
         }
         
         private IntVec3 GetSpawnPosition(IntVec3 center, float radius, List<IntVec3> usedPositions)
@@ -301,7 +295,5 @@ namespace MiningOverhaul
                 return false;
             }
         }
-        
-        // Removed all the old complex spawn methods - replaced with simple SpawnItem method above
     }
 }
