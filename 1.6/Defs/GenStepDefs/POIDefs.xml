@@ -5,8 +5,8 @@
     <defName>MO_InsectHiveEncounter</defName>
     <behavior>Encounter</behavior>                        <!-- Large spacing, avoids entrance -->
     <rarity>Rare</rarity>                               <!-- Spawns rarely -->
-    <minCount>2</minCount>                              <!-- At least 1 retries untill hits quota-->
-    <maxCount>3</maxCount>                              <!-- At most 3 -->
+    <poiAmount>2~3</poiAmount>                          <!-- Guarantees 1-2 hive encounters -->
+    <!-- Optional overrides: minDistanceOverride, spawnChanceOverride, entranceAvoidanceOverride -->
     <spawnGroups>
       <!-- Main hive structure -->
       <li>
@@ -17,6 +17,7 @@
           <li><thingDef>Hive</thingDef><count>1~2</count><chance>1.0</chance></li>
           <li><pawnKindDef>Megascarab</pawnKindDef><count>2~5</count><chance>0.8</chance></li>
           <li><pawnKindDef>Spelopede</pawnKindDef><count>1~2</count><chance>0.6</chance></li>
+          <li><thingDef>GlowPod</thingDef><count>1~1</count><chance>1</chance></li>
         </items>
       </li>
       <!-- Surrounding loot and atmosphere -->
@@ -25,9 +26,9 @@
         <radius>6</radius>
         <importance>Optional</importance>
         <items>
-          <li><thingDef>InsectJelly</thingDef><count>1~3</count><stackCount>5~15</stackCount><chance>0.7</chance></li>
-          <li><thingDef>GlowPod</thingDef><count>1~3</count><chance>0.5</chance></li>
-          <li><thingDef>Filth_Slime</thingDef><count>3~8</count><chance>0.8</chance></li>
+          <li><thingDef>InsectJelly</thingDef><count>0~2</count><stackCount>5~15</stackCount><chance>1</chance></li>
+          <li><thingDef>Filth_Slime</thingDef><count>3~8</count><chance>1</chance></li>
+          <li><thingDef>GlowPod</thingDef><count>0~2</count><chance>1</chance></li>
         </items>
       </li>
     </spawnGroups>
@@ -38,8 +39,8 @@
     <defName>MO_CommonGrass</defName>
     <behavior>Vegetation</behavior>                      <!-- Small spacing, dense coverage -->
     <rarity>VeryCommon</rarity>                         <!-- Spawns very often -->
-    <minCount>8</minCount>                              <!-- Lots of grass patches -->
-    <maxCount>999</maxCount>
+    <unlimitedSpawning>true</unlimitedSpawning>         <!-- Fills available space instead of fixed count -->
+    <maxUnlimitedCount>999</maxUnlimitedCount>          <!-- Safety limit for unlimited spawning -->
     <spawnGroups>
       <li>
         <groupName>grass_patch</groupName>
@@ -59,8 +60,8 @@
     <defName>MO_RareMushroom</defName>
     <behavior>Vegetation</behavior>                      <!-- Same vegetation pattern -->
     <rarity>VeryRare</rarity>                           <!-- But very rare -->
-    <minCount>0</minCount>                              <!-- Might not spawn at all -->
-    <maxCount>999</maxCount>                              <!-- At most 2 -->
+    <poiAmount>2~6</poiAmount>                          <!-- Might not spawn at all, at most 2 -->
+    <minDistanceOverride>6</minDistanceOverride>        <!-- Override: Keep special mushrooms further apart -->
     <spawnGroups>
       <li>
         <groupName>special_mushroom</groupName>
@@ -68,7 +69,49 @@
         <importance>Required</importance>
         <items>
           <li><thingDef>Glowstool</thingDef><count>1~3</count><chance>1.0</chance></li>
-          <li><thingDef>Agarilux</thingDef><count>0~1</count><chance>0.3</chance></li>
+          <li><thingDef>Agarilux</thingDef><count>0~1</count><chance>1.0</chance></li>
+        </items>
+      </li>
+    </spawnGroups>
+  </MiningOverhaul.SimplePOIDef>
+
+  <MiningOverhaul.SimplePOIDef>
+    <defName>MO_Bryolux</defName>
+    <behavior>Vegetation</behavior>                      <!-- Same vegetation pattern -->
+    <rarity>uncommon</rarity>                           <!-- But very rare -->
+    <poiAmount>2~6</poiAmount>                          <!-- Guarantees 3-8 bryolux patches -->
+    <spawnGroups>
+      <li>
+        <groupName>GlowLichenFromMinecraftLOL</groupName>
+        <radius>1</radius>
+        <importance>Required</importance>
+        <items>
+          <li><thingDef>Bryolux</thingDef><count>1~6</count><chance>1.0</chance></li>
+        </items>
+      </li>
+    </spawnGroups>
+  </MiningOverhaul.SimplePOIDef>
+
+  <MiningOverhaul.SimplePOIDef>
+    <defName>MO_TropicalPlants</defName>
+    <behavior>Vegetation</behavior>                      <!-- Same vegetation pattern -->
+    <rarity>common</rarity>                            
+    <unlimitedSpawning>true</unlimitedSpawning>         <!-- Fills available space instead of fixed count -->
+    <maxUnlimitedCount>999</maxUnlimitedCount>          <!-- Safety limit for unlimited spawning -->
+    <spawnChanceOverride>0.8</spawnChanceOverride>      <!-- Override: Higher chance per attempt -->
+    <spawnGroups>
+      <li>
+        <groupName>TropicalPlants</groupName>
+        <radius>2</radius>
+        <importance>Required</importance>
+        <items>
+          <li><thingDef>Plant_Alocasia</thingDef><count>0~2</count><chance>1.0</chance></li>
+          <li><thingDef>Plant_Ambrosia</thingDef><count>1~1</count><chance>0.05</chance></li>
+          <li><thingDef>Plant_Berry</thingDef><count>2~6</count><chance>0.2</chance></li>
+          <li><thingDef>Plant_Bush</thingDef><count>1~3</count><chance>0.6</chance></li>
+          <li><thingDef>Plant_Clivia</thingDef><count>0~2</count><chance>1.0</chance></li>
+          <li><thingDef>Plant_Rafflesia</thingDef><count>1~1</count><chance>0.1</chance></li>
+          <li><thingDef>Plant_ShrubLow</thingDef><count>2~4</count><chance>0.5</chance></li>
         </items>
       </li>
     </spawnGroups>
@@ -79,13 +122,13 @@
     <defName>MO_BrambleThicket</defName>
     <behavior>Vegetation</behavior>                      <!-- Vegetation pattern -->
     <rarity>Uncommon</rarity>                           <!-- Less common than grass -->
-    <minCount>3</minCount>                              <!-- At least 3 thickets -->
-    <maxCount>8</maxCount>                              <!-- At most 8 -->
+    <poiAmount>2~5</poiAmount>                          <!-- Guarantees 2-5 bramble thickets -->
+    <minDistanceOverride>8</minDistanceOverride>        <!-- Override: Keep bramble thickets well spaced -->
     <spawnGroups>
       <!-- Dense bramble core -->
       <li>
         <groupName>bramble_thicket</groupName>
-        <radius>3</radius>
+        <radius>4</radius>
         <importance>Required</importance>
         <items>
           <li><thingDef>Plant_Brambles</thingDef><count>15~30</count><chance>1.0</chance></li>
@@ -98,6 +141,34 @@
         <importance>Optional</importance>
         <items>
           <li><thingDef>Plant_Brambles</thingDef><count>3~8</count><chance>0.6</chance></li>
+        </items>
+      </li>
+    </spawnGroups>
+  </MiningOverhaul.SimplePOIDef>
+  
+  <MiningOverhaul.SimplePOIDef>
+    <defName>MO_ChokeVineThicket</defName>
+    <behavior>Vegetation</behavior>                      <!-- Vegetation pattern -->
+    <rarity>Uncommon</rarity>                           <!-- Less common than grass -->
+    <poiAmount>2~4</poiAmount>                          <!-- Guarantees 2-4 chokevine thickets -->
+    <entranceAvoidanceOverride>15</entranceAvoidanceOverride>  <!-- Override: Keep dangerous plants away from entrance -->
+    <spawnGroups>
+      <!-- Dense bramble core -->
+      <li>
+        <groupName>ChokeVine_thicket</groupName>
+        <radius>4</radius>
+        <importance>Required</importance>
+        <items>
+          <li><thingDef>Plant_Chokevine</thingDef><count>15~30</count><chance>1.0</chance></li>
+        </items>
+      </li>
+      <!-- Scattered brambles extending outward -->
+      <li>
+        <groupName>ChokeVine_edges</groupName>
+        <radius>8</radius>
+        <importance>Optional</importance>
+        <items>
+          <li><thingDef>Plant_Chokevine</thingDef><count>3~8</count><chance>0.6</chance></li>
         </items>
       </li>
     </spawnGroups>

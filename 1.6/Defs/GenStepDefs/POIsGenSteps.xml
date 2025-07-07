@@ -3,7 +3,7 @@
 
   <!-- POI Generation Steps for Cave Content -->
   <GenStepDef>
-    <defName>CaveInsectHivesLevelTwo</defName>
+    <defName>CaveInsectHivesDepthTwo</defName>
     <order>450</order>
     <genStep Class="MiningOverhaul.GenStep_POIGeneration">
         <poiDef>MO_InsectHiveEncounter</poiDef>
@@ -27,10 +27,34 @@
   </GenStepDef>
 
   <GenStepDef>
+    <defName>MO_Bryolux</defName>
+    <order>501</order>
+    <genStep Class="MiningOverhaul.GenStep_POIGeneration">
+        <poiDef>MO_Bryolux</poiDef>
+    </genStep>
+  </GenStepDef>
+
+  <GenStepDef>
+    <defName>MO_TropicalPlants</defName>
+    <order>502</order>
+    <genStep Class="MiningOverhaul.GenStep_POIGeneration">
+        <poiDef>MO_TropicalPlants</poiDef>
+    </genStep>
+  </GenStepDef>
+
+  <GenStepDef>
     <defName>CaveBrambleThickets</defName>
     <order>540</order>
     <genStep Class="MiningOverhaul.GenStep_POIGeneration">
         <poiDef>MO_BrambleThicket</poiDef>
+    </genStep>
+  </GenStepDef>
+
+  <GenStepDef>
+    <defName>MO_ChokeVineThicket</defName>
+    <order>541</order>
+    <genStep Class="MiningOverhaul.GenStep_POIGeneration">
+        <poiDef>MO_ChokeVineThicket</poiDef>
     </genStep>
   </GenStepDef>
 

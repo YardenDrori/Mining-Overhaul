@@ -23,9 +23,15 @@ namespace MiningOverhaul
         public List<POISpawnGroup> spawnGroups = new List<POISpawnGroup>(); // Groups of items that spawn together
         public List<string> allowedBiomes = new List<string>(); // empty = all biomes
         
-        // Count controls
-        public int minCount = 0;                                // Minimum number to spawn
-        public int maxCount = 10;                               // Maximum number to spawn
+        // Spawn count system
+        public IntRange poiAmount = new IntRange(1, 3);         // Range of POIs to spawn (e.g., 1~4)
+        public bool unlimitedSpawning = false;                  // If true, ignores poiAmount and spawns based on probability/space
+        public int maxUnlimitedCount = 999;                     // Maximum for unlimited spawning (safety limit)
+        
+        // Optional parameter overrides (use -1 to use behavior defaults)
+        public float minDistanceOverride = -1f;                 // Override minimum distance between POIs
+        public float spawnChanceOverride = -1f;                 // Override spawn chance per attempt
+        public float entranceAvoidanceOverride = -1f;           // Override entrance avoidance distance
     }
 
     // A group of items that spawn together - balanced approach
@@ -94,16 +100,16 @@ namespace MiningOverhaul
             
             if (MiningOverhaulMod.settings.verboseLogging)
             {
-                MOLog.Message($"POI Summary: {poiDef.defName} spawned {spawnedCount} instances (target: {poiDef.minCount}-{poiDef.maxCount})");
+                string targetInfo = poiDef.unlimitedSpawning ? "unlimited" : $"{poiDef.poiAmount.min}-{poiDef.poiAmount.max}";
+                MOLog.Message($"POI Summary: {poiDef.defName} spawned {spawnedCount} instances (target: {targetInfo})");
             }
         }
 
         private int GeneratePOIs()
         {
-            int gridSize = Mathf.RoundToInt(GetDefaultMinDistance());
+            int gridSize = Mathf.RoundToInt(GetEffectiveMinDistance());
             if (gridSize < 1) gridSize = 1;
 
-            int currentCount = 0;
             List<IntVec3> allCandidatePositions = new List<IntVec3>();
 
             // First pass: collect all valid candidate positions based on distribution pattern
@@ -112,21 +118,32 @@ namespace MiningOverhaul
             // Shuffle candidates for random selection
             allCandidatePositions.Shuffle();
             
+            if (poiDef.unlimitedSpawning)
+            {
+                return GenerateUnlimitedPOIs(allCandidatePositions);
+            }
+            else
+            {
+                return GenerateGuaranteedPOIs(allCandidatePositions);
+            }
+        }
+        
+        private int GenerateUnlimitedPOIs(List<IntVec3> candidatePositions)
+        {
             if (MiningOverhaulMod.settings.verboseLogging)
             {
-                MOLog.Message($"POI {poiDef.defName}: Found {allCandidatePositions.Count} candidate positions");
+                MOLog.Message($"POI {poiDef.defName}: Found {candidatePositions.Count} candidate positions, unlimited spawning");
             }
 
-            // Try to spawn POIs respecting min/max constraints
-            int maxRetries = Mathf.RoundToInt(allCandidatePositions.Count * GetRetryMultiplier());
-            int retryCount = 0;
+            int currentCount = 0;
             
-            foreach (IntVec3 candidatePos in allCandidatePositions)
+            // Probabilistic spawning until we run out of valid spots or hit safety limit
+            foreach (IntVec3 candidatePos in candidatePositions)
             {
-                if (currentCount >= poiDef.maxCount)
+                if (currentCount >= poiDef.maxUnlimitedCount)
                     break;
 
-                if (Rand.Chance(GetDefaultSpawnChance()) && IsValidPOISpot(candidatePos))
+                if (Rand.Chance(GetEffectiveSpawnChance()) && IsValidPOISpot(candidatePos))
                 {
                     if (TrySpawnPOI(candidatePos))
                     {
@@ -135,12 +152,45 @@ namespace MiningOverhaul
                 }
             }
 
-            // If we haven't met minimum requirements, try harder
-            while (currentCount < poiDef.minCount && retryCount < maxRetries)
+            return currentCount;
+        }
+        
+        private int GenerateGuaranteedPOIs(List<IntVec3> candidatePositions)
+        {
+            // Determine exact target count from range
+            int targetCount = poiDef.poiAmount.RandomInRange;
+            
+            if (MiningOverhaulMod.settings.verboseLogging)
             {
-                foreach (IntVec3 candidatePos in allCandidatePositions)
+                MOLog.Message($"POI {poiDef.defName}: Found {candidatePositions.Count} candidate positions, target count: {targetCount}");
+            }
+
+            int currentCount = 0;
+            int maxRetries = Mathf.RoundToInt(candidatePositions.Count * GetRetryMultiplier());
+            int retryCount = 0;
+            
+            // First pass: probabilistic spawning
+            foreach (IntVec3 candidatePos in candidatePositions)
+            {
+                if (currentCount >= targetCount)
+                    break;
+
+                if (Rand.Chance(GetEffectiveSpawnChance()) && IsValidPOISpot(candidatePos))
                 {
-                    if (currentCount >= poiDef.maxCount)
+                    if (TrySpawnPOI(candidatePos))
+                    {
+                        currentCount++;
+                    }
+                }
+            }
+
+            // Second pass: guaranteed spawning to meet target count
+            while (currentCount < targetCount && retryCount < maxRetries)
+            {
+                bool foundSpot = false;
+                foreach (IntVec3 candidatePos in candidatePositions)
+                {
+                    if (currentCount >= targetCount)
                         break;
 
                     if (!usedPositions.Contains(candidatePos) && IsValidPOISpot(candidatePos))
@@ -148,16 +198,21 @@ namespace MiningOverhaul
                         if (TrySpawnPOI(candidatePos))
                         {
                             currentCount++;
+                            foundSpot = true;
                             break;
                         }
                     }
                 }
-                retryCount++;
+                
+                if (!foundSpot)
+                {
+                    retryCount++;
+                }
             }
 
-            if (MiningOverhaulMod.settings.verboseLogging && currentCount < poiDef.minCount)
+            if (MiningOverhaulMod.settings.verboseLogging && currentCount < targetCount)
             {
-                MOLog.Warning($"POI {poiDef.defName}: Only spawned {currentCount}/{poiDef.minCount} minimum required after {retryCount} retries");
+                MOLog.Warning($"POI {poiDef.defName}: Only spawned {currentCount}/{targetCount} target count after {retryCount} retries");
             }
 
             return currentCount;
@@ -165,22 +220,36 @@ namespace MiningOverhaul
 
         private void ApplyBehaviorDefaults()
         {
-            // Behavior no longer sets count defaults - they're explicit in XML
-            // Just validate the values
-            if (poiDef.minCount < 0) poiDef.minCount = 0;
-            if (poiDef.maxCount < poiDef.minCount) poiDef.maxCount = poiDef.minCount + 5;
+            // Validate the range values
+            if (poiDef.poiAmount.min < 0) poiDef.poiAmount.min = 0;
+            if (poiDef.poiAmount.max < poiDef.poiAmount.min) poiDef.poiAmount.max = poiDef.poiAmount.min + 3;
         }
         
-        private int GetDefaultMinCount()
+        private float GetEffectiveMinDistance()
         {
-            // Use explicit minCount from XML, no behavior-based defaults
-            return poiDef.minCount;
+            // Use override if specified, otherwise use behavior default
+            if (poiDef.minDistanceOverride >= 0f)
+                return poiDef.minDistanceOverride;
+            
+            return GetDefaultMinDistance();
         }
         
-        private int GetDefaultMaxCount()
+        private float GetEffectiveSpawnChance()
         {
-            // Use explicit maxCount from XML, no behavior-based defaults
-            return poiDef.maxCount;
+            // Use override if specified, otherwise use rarity default
+            if (poiDef.spawnChanceOverride >= 0f)
+                return poiDef.spawnChanceOverride;
+            
+            return GetDefaultSpawnChance();
+        }
+        
+        private float GetEffectiveEntranceAvoidance()
+        {
+            // Use override if specified, otherwise use behavior default
+            if (poiDef.entranceAvoidanceOverride >= 0f)
+                return poiDef.entranceAvoidanceOverride;
+            
+            return GetEntranceAvoidanceDistance();
         }
         
         private float GetDefaultMinDistance()
@@ -215,7 +284,7 @@ namespace MiningOverhaul
             if (!pos.InBounds(map)) return false;
 
             // Check distance from other POIs of same type
-            float minDistance = GetDefaultMinDistance();
+            float minDistance = GetEffectiveMinDistance();
             foreach (IntVec3 usedPos in usedPositions)
             {
                 float distance = pos.DistanceTo(usedPos);
@@ -224,7 +293,7 @@ namespace MiningOverhaul
             }
 
             // Check distance from cave entrance based on avoidEntrance setting
-            float requiredDistance = GetEntranceAvoidanceDistance();
+            float requiredDistance = GetEffectiveEntranceAvoidance();
             if (requiredDistance > 0f)
             {
                 IntVec3 entrancePos = FindCaveEntrance();

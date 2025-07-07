@@ -42,11 +42,13 @@
     <li>RockChunks</li>
     <li>PlaceCavernExit</li>
     <li>DeepSteelVeins</li>
-    <li>CaveInsectHives</li>
+    <li>CaveInsectHivesDepthTwo</li>
     <li>CaveCommonGrass</li>
     <li>CaveRareMushrooms</li>
+    <li>MO_Bryolux</li>
+    <li>MO_TropicalPlants</li>
+    <li>MO_ChokeVineThicket</li>
     <li>CaveBrambleThickets</li>
-    <li>Plants</li>
     <li>MutatorFinal</li>
     <li>Fog</li>
   </genSteps>
