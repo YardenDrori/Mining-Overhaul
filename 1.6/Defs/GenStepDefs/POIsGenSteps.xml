@@ -6,7 +6,7 @@
     <defName>CaveInsectHivesDepthTwo</defName>
     <order>450</order>
     <genStep Class="MiningOverhaul.GenStep_POIGeneration">
-        <poiDef>MO_InsectHiveEncounter</poiDef>
+        <poiDef>MO_InsectHiveEncounterDepthTwo</poiDef>
     </genStep>
   </GenStepDef>
 

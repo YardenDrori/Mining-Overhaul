@@ -2,7 +2,7 @@
 
   <!-- INSECT HIVE ENCOUNTERS - Dangerous but rewarding -->
   <MiningOverhaul.SimplePOIDef>
-    <defName>MO_InsectHiveEncounter</defName>
+    <defName>MO_InsectHiveEncounterDepthTwo</defName>
     <behavior>Encounter</behavior>                        <!-- Large spacing, avoids entrance -->
     <rarity>Rare</rarity>                               <!-- Spawns rarely -->
     <poiAmount>2~3</poiAmount>                          <!-- Guarantees 1-2 hive encounters -->
