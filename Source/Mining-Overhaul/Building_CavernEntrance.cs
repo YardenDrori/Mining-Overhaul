@@ -12,11 +12,8 @@ namespace MiningOverhaul
     public class CavernEntrance : MapPortal
     {
         #region Constants
-        private const int StabilityDurationTicks = 36000; // Time until collapse starts
-        private const int MiningInstabilityIncrease = 1000; // Adjust this value as needed
         private const int PartialCollapseInterval = 120; // Ticks between blocking cells
         private const int AcceleratedCollapseInterval = 15; // Much faster blocking during collapse
-        private float CollapseKillThreshold = 1.5f; // 150% stability for forced collapse
         
         // Performance optimization constants
         private const int CELLS_PER_REFRESH = 50; // Process this many cells per tick
@@ -494,6 +491,16 @@ namespace MiningOverhaul
             // If no exit found, set to map center as fallback
             caveExitPosition = pocketMap.Center;
         }
+
+        // Get stability parameters from XML or defaults
+        private StabilityParameters GetStabilityParameters()
+        {
+            return def.GetModExtension<StabilityParameters>() ?? new StabilityParameters();
+        }
+        
+        private int StabilityDurationTicks => GetStabilityParameters().stabilityDurationTicks;
+        private int MiningInstabilityIncrease => GetStabilityParameters().miningInstabilityIncrease;
+        private float CollapseKillThreshold => GetStabilityParameters().collapseKillThreshold;
 
         // OPTIMIZED: Now incremental instead of processing all cells at once
         private void RefreshBlockableCells()

@@ -1,8 +1,29 @@
 <Defs>
 
-    <ThingDef ParentName="CaveExit">
+    <ThingDef Name="CaveExit" ParentName="PocketMapExit">
         <defName>CavernExit</defName>
         <label>cavern exit</label>
+        <description>A rope line which links to the surface above.</description>
+        <size>(3,3)</size>
+        <thingClass>CaveExit</thingClass>
+        <drawerType>MapMeshAndRealTime</drawerType>
+        <graphicData>
+        <graphicClass>Graphic_Single</graphicClass>
+        <texPath>Things/Building/Misc/CaveExit/CaveExit</texPath>
+        <drawSize>(3,3)</drawSize>
+        </graphicData>
+        <statBases>
+        <Flammability>0</Flammability>
+        </statBases>
+        <comps>
+        <li Class="CompProperties_Glower">
+            <glowRadius>25</glowRadius>
+            <glowColor>(140,160,184,0)</glowColor>
+        </li>
+        <li Class="CompProperties_Effecter">
+            <effecterDef>UndercaveMapExitLightshafts</effecterDef>
+        </li>
+        </comps>
     </ThingDef>
 
     <ThingDef ParentName="BuildingBase" Name="CavernEntranceBase" Abstract="True">
@@ -48,6 +69,13 @@
         <thickness>5</thickness>
         </li>
     </comps>
+    <modExtensions>
+        <li Class="MiningOverhaul.StabilityParameters">
+            <stabilityDurationTicks>300000</stabilityDurationTicks>
+            <miningInstabilityIncrease>500</miningInstabilityIncrease>
+            <collapseKillThreshold>1.15</collapseKillThreshold>
+        </li>
+    </modExtensions>
     </ThingDef>
 
 
