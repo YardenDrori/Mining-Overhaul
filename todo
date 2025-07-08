@@ -58,7 +58,9 @@ remove creature spawn message
 figure out creature spawner SFX being weird
 make entrance have more light radius
 check for empty functions
-
+make sure my system isnt too weird from base game rimworld chenanigans
+make verbose logging verbose log
+figure out if verbose logging is bad for performance
 
 requirement per biome:
 main floor texture, secondery floor texture

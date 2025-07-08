@@ -110,3 +110,5 @@ Cave Creation → Entrance Spawning → Component Attachment → Stability Degra
 - Game definitions in `1.6/Defs/`
 - Localization in `Languages/English/`
 - The `todo` file contains development roadmap and known issues
+
+- when finishing long tasks, run `notify-send "<title>" "<body>" -e -a "Claude Code"` at the end, replacing the two values.

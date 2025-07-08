@@ -5,7 +5,8 @@
     <defName>MO_InsectHiveEncounterDepthTwo</defName>
     <behavior>Encounter</behavior>                        <!-- Large spacing, avoids entrance -->
     <rarity>Rare</rarity>                               <!-- Spawns rarely -->
-    <poiAmount>2~3</poiAmount>                          <!-- Guarantees 1-2 hive encounters -->
+    <poiAmount>2~3</poiAmount>                          <!-- Guarantees 2-3 hive encounters -->
+    <mapZones>9</mapZones>                              <!-- Divide map into 2x2 zones for better distribution -->
     <!-- Optional overrides: minDistanceOverride, spawnChanceOverride, entranceAvoidanceOverride -->
     <spawnGroups>
       <!-- Main hive structure -->
@@ -106,7 +107,7 @@
         <importance>Required</importance>
         <items>
           <li><thingDef>Plant_Alocasia</thingDef><count>0~2</count><chance>1.0</chance></li>
-          <li><thingDef>Plant_Ambrosia</thingDef><count>1~1</count><chance>0.05</chance></li>
+          <li><thingDef>Plant_Ambrosia</thingDef><count>5~15</count><chance>0.01</chance></li>
           <li><thingDef>Plant_Berry</thingDef><count>2~6</count><chance>0.2</chance></li>
           <li><thingDef>Plant_Bush</thingDef><count>1~3</count><chance>0.6</chance></li>
           <li><thingDef>Plant_Clivia</thingDef><count>0~2</count><chance>1.0</chance></li>

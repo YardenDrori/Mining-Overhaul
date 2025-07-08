@@ -28,6 +28,9 @@ namespace MiningOverhaul
         public bool unlimitedSpawning = false;                  // If true, ignores poiAmount and spawns based on probability/space
         public int maxUnlimitedCount = 999;                     // Maximum for unlimited spawning (safety limit)
         
+        // Spatial distribution controls
+        public int mapZones = 1;                                // Divide map into zones for better distribution (1=no zones, 4=2x2 grid, 9=3x3 grid)
+        
         // Optional parameter overrides (use -1 to use behavior defaults)
         public float minDistanceOverride = -1f;                 // Override minimum distance between POIs
         public float spawnChanceOverride = -1f;                 // Override spawn chance per attempt
@@ -165,6 +168,91 @@ namespace MiningOverhaul
                 MOLog.Message($"POI {poiDef.defName}: Found {candidatePositions.Count} candidate positions, target count: {targetCount}");
             }
 
+            // Use zone-based distribution if specified
+            if (poiDef.mapZones > 1 && targetCount > 1)
+            {
+                return GenerateZoneDistributedPOIs(candidatePositions, targetCount);
+            }
+            
+            // Standard generation for single POIs or no zones
+            return GenerateStandardPOIs(candidatePositions, targetCount);
+        }
+        
+        private int GenerateZoneDistributedPOIs(List<IntVec3> candidatePositions, int targetCount)
+        {
+            // Divide map into zones and try to spawn in different zones
+            List<List<IntVec3>> zones = DivideIntoZones(candidatePositions);
+            
+            if (MiningOverhaulMod.settings.verboseLogging)
+            {
+                MOLog.Message($"POI {poiDef.defName}: Divided {candidatePositions.Count} positions into {zones.Count} zones");
+            }
+            
+            int currentCount = 0;
+            int maxRetries = 20;
+            
+            // First pass: try to place one POI per zone
+            zones.Shuffle(); // Randomize zone order
+            foreach (var zone in zones)
+            {
+                if (currentCount >= targetCount || zone.Count == 0)
+                    continue;
+                    
+                zone.Shuffle(); // Randomize positions within zone
+                foreach (IntVec3 candidatePos in zone)
+                {
+                    if (Rand.Chance(GetEffectiveSpawnChance()) && IsValidPOISpot(candidatePos))
+                    {
+                        if (TrySpawnPOI(candidatePos))
+                        {
+                            currentCount++;
+                            break; // Move to next zone
+                        }
+                    }
+                }
+            }
+            
+            // Second pass: fill remaining slots in any available zone
+            int retryCount = 0;
+            while (currentCount < targetCount && retryCount < maxRetries)
+            {
+                bool foundSpot = false;
+                foreach (var zone in zones)
+                {
+                    if (currentCount >= targetCount)
+                        break;
+                        
+                    foreach (IntVec3 candidatePos in zone)
+                    {
+                        if (!usedPositions.Contains(candidatePos) && IsValidPOISpot(candidatePos))
+                        {
+                            if (TrySpawnPOI(candidatePos))
+                            {
+                                currentCount++;
+                                foundSpot = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (foundSpot) break;
+                }
+                
+                if (!foundSpot)
+                {
+                    retryCount++;
+                }
+            }
+            
+            if (MiningOverhaulMod.settings.verboseLogging && currentCount < targetCount)
+            {
+                MOLog.Warning($"POI {poiDef.defName}: Zone-distributed spawning: {currentCount}/{targetCount} after {retryCount} retries");
+            }
+            
+            return currentCount;
+        }
+        
+        private int GenerateStandardPOIs(List<IntVec3> candidatePositions, int targetCount)
+        {
             int currentCount = 0;
             int maxRetries = Mathf.RoundToInt(candidatePositions.Count * GetRetryMultiplier());
             int retryCount = 0;
@@ -212,10 +300,45 @@ namespace MiningOverhaul
 
             if (MiningOverhaulMod.settings.verboseLogging && currentCount < targetCount)
             {
-                MOLog.Warning($"POI {poiDef.defName}: Only spawned {currentCount}/{targetCount} target count after {retryCount} retries");
+                MOLog.Warning($"POI {poiDef.defName}: Standard spawning: {currentCount}/{targetCount} after {retryCount} retries");
             }
 
             return currentCount;
+        }
+        
+        private List<List<IntVec3>> DivideIntoZones(List<IntVec3> candidatePositions)
+        {
+            int zonesPerSide = Mathf.RoundToInt(Mathf.Sqrt(poiDef.mapZones));
+            if (zonesPerSide < 1) zonesPerSide = 1;
+            
+            int zoneWidth = map.Size.x / zonesPerSide;
+            int zoneHeight = map.Size.z / zonesPerSide;
+            
+            List<List<IntVec3>> zones = new List<List<IntVec3>>();
+            
+            // Initialize zones
+            for (int i = 0; i < poiDef.mapZones; i++)
+            {
+                zones.Add(new List<IntVec3>());
+            }
+            
+            // Distribute candidates into zones
+            foreach (IntVec3 pos in candidatePositions)
+            {
+                int zoneX = Mathf.Min(pos.x / zoneWidth, zonesPerSide - 1);
+                int zoneZ = Mathf.Min(pos.z / zoneHeight, zonesPerSide - 1);
+                int zoneIndex = zoneZ * zonesPerSide + zoneX;
+                
+                if (zoneIndex < zones.Count)
+                {
+                    zones[zoneIndex].Add(pos);
+                }
+            }
+            
+            // Remove empty zones
+            zones.RemoveAll(zone => zone.Count == 0);
+            
+            return zones;
         }
 
         private void ApplyBehaviorDefaults()
