@@ -175,5 +175,32 @@
     </spawnGroups>
   </MiningOverhaul.SimplePOIDef>
 
+    <MiningOverhaul.SimplePOIDef>
+    <defName>CaveBreadcrumbsVegetationCave</defName>
+    <behavior>Vegetation</behavior>                      <!-- Vegetation pattern -->
+    <rarity>VeryCommon</rarity>                           
+    <unlimitedSpawning>true</unlimitedSpawning>         <!-- Fills available space instead of fixed count -->
+    <maxUnlimitedCount>999</maxUnlimitedCount>     
+    <entranceAvoidanceOverride>20</entranceAvoidanceOverride>  <!-- Override: Keep dangerous plants away from entrance -->
+    <spawnGroups>
+      <li>
+        <groupName>Breadcrumb</groupName>
+        <radius>1</radius>
+        <importance>Required</importance>
+        <items>
+          <li><thingDef>CaveLightShortDurationGreen</thingDef><count>1~1</count><chance>1.0</chance></li>
+        </items>
+      </li>
+      <li>
+        <groupName>LongLight</groupName>
+        <radius>16</radius>
+        <importance>Optional</importance>
+        <items>
+          <li><thingDef>CaveLightLongDurationGreen</thingDef><count>1~1</count><chance>0.05</chance></li>
+        </items>
+      </li>
+    </spawnGroups>
+  </MiningOverhaul.SimplePOIDef>
+
 
 </Defs>
