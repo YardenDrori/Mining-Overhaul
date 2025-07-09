@@ -47,6 +47,8 @@
             <glowRadius>12</glowRadius>
             <glowColor>(76,76,76,0)</glowColor>
             <stayOnTicks>200</stayOnTicks>
+            <fadeInTicks>180</fadeInTicks>
+            <fadeOutTicks>180</fadeOutTicks>
         </li>
         </comps>
     </ThingDef>
