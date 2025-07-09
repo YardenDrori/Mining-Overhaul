@@ -175,7 +175,7 @@
     </spawnGroups>
   </MiningOverhaul.SimplePOIDef>
 
-    <MiningOverhaul.SimplePOIDef>
+    <MiningOverhaul.SimplePOIDef> <!--Legacy-->
     <defName>CaveBreadcrumbsVegetationCave</defName>
     <behavior>Vegetation</behavior>                      <!-- Vegetation pattern -->
     <rarity>VeryCommon</rarity>                           

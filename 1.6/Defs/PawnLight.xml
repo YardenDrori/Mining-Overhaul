@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <ThingDef ParentName="BuildingBase">
+    <defName>PawnCaveLight</defName>
+    <label>pawn cave light</label>
+    <description>A light that follows a pawn in caves.</description>
+    <altitudeLayer>Floor</altitudeLayer>
+    <leaveResourcesWhenKilled>false</leaveResourcesWhenKilled>
+    <passability>Standable</passability>
+    <pathCost>0</pathCost>
+    <fillPercent>0</fillPercent>
+    <canOverlapZones>true</canOverlapZones>
+    <rotatable>false</rotatable>
+    <size>(1,1)</size>
+    <graphicData>
+      <texPath>Things/Building/Misc/NothingLOL</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>1</drawSize>
+      <drawRotated>false</drawRotated>
+      <drawOffset>(0,0,-0.05)</drawOffset>
+    </graphicData>
+    <destroyable>false</destroyable>
+    <useHitPoints>false</useHitPoints>
+    <building>
+      <isEdifice>true</isEdifice>
+      <deconstructible>false</deconstructible>
+      <isTargetable>false</isTargetable>
+      <isInert>true</isInert>
+      <claimable>false</claimable>
+      <expandHomeArea>false</expandHomeArea>
+    </building>
+    <statBases>
+      <MaxHitPoints>1</MaxHitPoints>
+      <Flammability>0</Flammability>
+      <Beauty>0</Beauty>
+      <Mass>0</Mass>
+    </statBases>
+    <selectable>false</selectable>
+    <neverMultiSelect>true</neverMultiSelect>
+    <drawGUIOverlay>false</drawGUIOverlay>
+    <comps>
+      <li Class="CompProperties_Glower">
+        <glowRadius>12</glowRadius>
+        <glowColor>(217,217,217,0)</glowColor>
+      </li>
+    </comps>
+  </ThingDef>
+
+</Defs>

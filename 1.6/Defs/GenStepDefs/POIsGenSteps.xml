@@ -59,7 +59,7 @@
   </GenStepDef>
 
   <GenStepDef>
-    <defName>CaveBreadcrumbsVegetationCave</defName>
+    <defName>CaveBreadcrumbsVegetationCave</defName> <!--Legacy-->
     <order>600</order>
     <genStep Class="MiningOverhaul.GenStep_POIGeneration">
         <poiDef>CaveBreadcrumbsVegetationCave</poiDef>

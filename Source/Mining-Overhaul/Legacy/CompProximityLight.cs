@@ -5,7 +5,7 @@ using Verse;
 
 namespace MiningOverhaul
 {
-    public class CompProperties_ProximityLight : CompProperties
+    public class CompProperties_ProximityLight : CompProperties //legacy
     {
         public float radius = 5f;
         public float glowRadius = 12f;

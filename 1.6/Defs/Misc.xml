@@ -2,7 +2,7 @@
 
 
 
-    <ThingDef ParentName="BuildingBase">
+    <ThingDef ParentName="BuildingBase"> <!--Legacy-->
         <defName>CaveLightShortDurationGreen</defName>
         <label>cave light (short)</label>
         <description>silksong when?</description>
