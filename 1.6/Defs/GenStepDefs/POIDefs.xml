@@ -191,14 +191,6 @@
           <li><thingDef>CaveLightShortDurationGreen</thingDef><count>1~1</count><chance>1.0</chance></li>
         </items>
       </li>
-      <li>
-        <groupName>LongLight</groupName>
-        <radius>16</radius>
-        <importance>Optional</importance>
-        <items>
-          <li><thingDef>CaveLightLongDurationGreen</thingDef><count>1~1</count><chance>0.05</chance></li>
-        </items>
-      </li>
     </spawnGroups>
   </MiningOverhaul.SimplePOIDef>
 

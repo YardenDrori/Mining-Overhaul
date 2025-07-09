@@ -51,53 +51,6 @@
         </comps>
     </ThingDef>
 
-    <ThingDef ParentName="BuildingBase">
-        <defName>CaveLightLongDurationGreen</defName>
-        <label>cave light (Long)</label>
-        <description>zoteboat when?</description>
-        <altitudeLayer>Floor</altitudeLayer>
-        <leaveResourcesWhenKilled>false</leaveResourcesWhenKilled>
-        <passability>Standable</passability>
-        <pathCost>0</pathCost>
-        <fillPercent>0</fillPercent>
-        <canOverlapZones>true</canOverlapZones>
-        <rotatable>false</rotatable>
-        <size>(1,1)</size>
-        <graphicData>
-        <texPath>Things/Building/Misc/NothingLOL</texPath>
-        <graphicClass>Graphic_Single</graphicClass>
-        <drawSize>1</drawSize>
-        <drawRotated>false</drawRotated>
-        <drawOffset>(0,0,-0.05)</drawOffset>
-        </graphicData>
-        <destroyable>false</destroyable>
-        <useHitPoints>false</useHitPoints>
-        <building>
-        <isEdifice>true</isEdifice>
-        <deconstructible>false</deconstructible>
-        <isTargetable>false</isTargetable>
-        <isInert>true</isInert>
-        <claimable>false</claimable>
-        <expandHomeArea>false</expandHomeArea>
-        </building>
-        <statBases>
-        <MaxHitPoints>1</MaxHitPoints>
-        <Flammability>0</Flammability>
-        <Beauty>0</Beauty>
-        <Mass>0</Mass>
-        </statBases>
-        <selectable>false</selectable>
-        <neverMultiSelect>true</neverMultiSelect>
-        <drawGUIOverlay>false</drawGUIOverlay>
-        <tickerType>Normal</tickerType>
-        <comps>
-        <li Class="MiningOverhaul.CompProperties_ProximityLight">
-            <radius>6</radius>
-            <glowRadius>12</glowRadius>
-            <glowColor>(76,76,76,0)</glowColor>
-            <stayOnTicks>30000</stayOnTicks>
-        </li>
-        </comps>
-    </ThingDef>
+
 
 </Defs>
